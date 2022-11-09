@@ -1,0 +1,6 @@
+config  ansible_connection=local
+client  ansible_host=192.168.99.100 ansible_ssh_private_key_file=/vagrant/.vagrant/machines/client/virtualbox/private_key
+web     ansible_host=10.0.99.20     ansible_ssh_private_key_file=/vagrant/.vagrant/machines/web/virtualbox/private_key
+db      ansible_host=10.0.99.30     ansible_ssh_private_key_file=/vagrant/.vagrant/machines/db/virtualbox/private_key
+backup  ansible_host=10.0.99.40     ansible_ssh_private_key_file=/vagrant/.vagrant/machines/backup/virtualbox/private_key
+ca      ansible_host=10.0.99.50     ansible_ssh_private_key_file=/vagrant/.vagrant/machines/ca/virtualbox/private_key
