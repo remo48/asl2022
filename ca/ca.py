@@ -134,7 +134,6 @@ class CA:
                 serial.seek(0)
                 serial.write(str(int(serialnr) + inc))
                 serial.truncate()
-        print("Issued new serial number", serialnr)
         return int(serialnr)
 
     def get_times(self):
