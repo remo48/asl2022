@@ -1,0 +1,14 @@
+{% extends "base_menu.html" %} {% block menu_content %}
+<h1>Profile</h1>
+<form action="/profile" method="post" class="d-flex flex-column gap-2">
+  <label for="firstname"> First name: </label>
+  <input type="text" id="firstname" name="firstname" value="{{ current_user.firstname }}" />
+  <label> Last name: </label>
+  <input type="text" id="lastname" name="lastname" value="{{ current_user.lastname }}" />
+  <label> Email: </label>
+  <input type="text" id="email" name="email" value="{{ current_user.email }}" />
+  <label> Password: </label>
+  <input type="password" id="password" name="password"/>
+  <button type="submit">Save</button>
+</form>
+{% endblock %}
