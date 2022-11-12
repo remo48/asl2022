@@ -1,1 +1,23 @@
-SECRET_KEY = "b3c622d15dde101396de6151b87db6316acab5c12a5405ac53fd11da6815d7e3"
+from logging.config import dictConfig
+import os
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+LOG_CONFIG = {
+    "version": 1,
+    "formatters": {
+        "default": {
+            "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+        }
+    },
+    "handlers": {
+        "wsgi": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "default",
+            "filename": "web-server.log",
+            "maxBytes": 1024,
+        }
+    },
+    "root": {"level": "INFO", "handlers": ["wsgi"]},
+}
+dictConfig(LOG_CONFIG)
+

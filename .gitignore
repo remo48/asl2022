@@ -1,2 +1,6 @@
 # General
 .vagrant/
+web-server/venv
+web-server/.env
+web-server/web-server.log
+keys/

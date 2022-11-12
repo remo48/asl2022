@@ -1,5 +1,6 @@
 import os
 from flask import render_template, request, redirect, Flask, send_file
+import logging
 from flask_login import (
     login_user,
     fresh_login_required,
@@ -27,6 +28,7 @@ def load_user(user_id):
 
 @app.route("/login")
 def login():
+    logging.info("login")
     return render_template("login.html")
 
 
@@ -153,6 +155,7 @@ def revoke():
             revokeCertificate(serial)
             removeCertificate(serial)
     return redirect("/certificates")
+
 
 @app.route("/admin")
 @fresh_login_required
