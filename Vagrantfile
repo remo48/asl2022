@@ -1,77 +1,131 @@
+VM_BOX="debian/bullseye64"
+
+MEMORY=512
+CLIENT_MEMORY=1024
+CPU_CAP_PERCENTAGE=50
+
+INTERNAL_NETWORK="asl-internal"
+PUBLIC_NETWORK="asl-public"
+
+
+# definition of machines 
+# IMPORTANT: if something is changed here, inventory must be 
+# changed as well
+clientvm = {
+  :name => "client",
+  :pub_ip => "192.168.99.100"
+}
+
+configvm = {
+  :name => "config",
+  :ip => "10.0.99.10",
+  :pub_ip => "192.168.99.10"
+}
+
+hosts = {
+  "web" => {
+    :ip => "10.0.99.20",
+    :pub_ip => "192.168.99.20"
+  },
+  # "db" => {
+  #   :ip => "10.0.99.30"
+  # },
+  # "backup" => {
+  #   :ip => "10.0.99.40"
+  # },
+  # "ca" => {
+  #   :ip => "10.0.99.50"
+  # }
+}
+
 Vagrant.configure("2") do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
 
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://vagrantcloud.com/search.
+  config.vm.provider "virtualbox" do |vb|
+		vb.customize ["modifyvm", :id, "--cpuexecutioncap", CPU_CAP_PERCENTAGE]
+	end
 
-  config.vm.provider "virtualbox" do |vb|  
-    # Customize the amount of memory on the VM:
-    vb.memory = "1024"
+  # set up internal hosts
+  hosts.each do |hostname, info|
+    config.vm.define hostname do |hostconf|
+      hostconf.vm.box = VM_BOX
+      hostconf.vm.hostname = hostname
+      hostconf.vm.network "private_network", ip: "#{info[:ip]}", virtualbox__intnet: INTERNAL_NETWORK
+
+      # disable synced folder
+      hostconf.vm.synced_folder ".", "/vagrant", disabled: true
+
+      # add public ip address
+      if info.key?(:pub_ip)
+        hostconf.vm.network "private_network", ip: "#{info[:pub_ip]}", virtualbox__intnet: PUBLIC_NETWORK
+      end
+
+      # configure virtualbox
+      hostconf.vm.provider "virtualbox" do |vb|
+        vb.name = "asl-#{hostname}"
+        vb.memory = MEMORY
+      end
+
+      # add host names to /etc/hosts
+      hosts.each do |peer_hostname, peer_info|
+        hostconf.vm.provision "shell", inline: <<-SCRIPT
+          echo "#{peer_info[:ip]} #{peer_hostname}" | sudo tee -a /etc/hosts
+        SCRIPT
+      end
+    end
+  end
+  
+  # setup client machine
+  config.vm.define clientvm[:name] do |clientconf|
+    clientconf.vm.box = VM_BOX
+    clientconf.vm.hostname = clientvm[:name]
+    clientconf.vm.network "private_network", ip: "#{clientvm[:pub_ip]}", virtualbox__intnet: PUBLIC_NETWORK
+
+    # disable synced folder
+    clientconf.vm.synced_folder ".", "/vagrant", disabled: true
+
+    # configure virtualbox
+    clientconf.vm.provider "virtualbox" do |vb|
+      vb.name = "asl-#{clientvm[:name]}"
+      vb.memory = CLIENT_MEMORY
+    end
+
+    # add hosts with public ip to /etc/hosts
+    hosts.each do |peer_hostname, peer_info|
+      if peer_info.key?(:pub_ip)
+        clientconf.vm.provision "shell", inline: <<-SCRIPT
+          echo "#{peer_info[:pub_ip]} #{peer_hostname}" | sudo tee -a /etc/hosts
+        SCRIPT
+      end
+    end
   end
 
-  config.vm.define "web" do |web|
-    web.vm.box = "debian/bullseye64"
-    web.vm.network "private_network", ip: "192.168.56.2"
+  # setup config machine
+  config.vm.define configvm[:name] do |configconf|
+    configconf.vm.box = VM_BOX
+    configconf.vm.hostname= configvm[:name]
+    configconf.vm.network "private_network", ip: "#{configvm[:pub_ip]}", virtualbox__intnet: PUBLIC_NETWORK
+    configconf.vm.network "private_network", ip: "#{configvm[:ip]}", virtualbox__intnet: INTERNAL_NETWORK
+    
+    configconf.vm.provider "virtualbox" do |vb|
+      vb.name = "asl-#{configvm[:name]}"
+      vb.memory = MEMORY
+    end
+
+    hosts.each do |peer_hostname, peer_info|
+      configconf.vm.provision "shell", inline: <<-SCRIPT
+        echo "#{peer_info[:ip]} #{peer_hostname}" | sudo tee -a /etc/hosts
+      SCRIPT
+    end
+
+    # provision machines with config as master
+    configconf.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "site.yml"
+      ansible.limit = "all"
+      ansible.install = true
+      ansible.verbose = true
+      ansible.inventory_path = "production"
+      ansible.provisioning_path = "/vagrant/shared/ansible"
+    end
   end
 
-  config.vm.define "db" do |db|
-    db.vm.box = "debian/bullseye64"
-    db.vm.network "private_network", ip: "192.168.56.3"
-  end
-
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # NOTE: This will enable public access to the opened port
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine and only allow access
-  # via 127.0.0.1 to disable public access
-  # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
-
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
-
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
-  #
-  #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
-
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Ansible, Chef, Docker, Puppet and Salt are also available. Please see the
-  # documentation for more information about their specific syntax and use.
-  # config.vm.provision "shell", inline: <<-SHELL
-  #   apt-get update
-  #   apt-get install -y apache2
-  # SHELL
 end

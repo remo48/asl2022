@@ -1,0 +1,6 @@
+---
+- hosts: clientservers
+  become: yes
+  become_method: sudo
+  roles:
+    - xfce-desktop
