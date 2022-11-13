@@ -1,0 +1,7 @@
+---
+xfce_packages:
+  - x-window-system
+  - xfce4
+  - lightdm
+
+xfce_login_manager_service: lightdm

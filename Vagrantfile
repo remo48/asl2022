@@ -27,15 +27,15 @@ hosts = {
     :ip => "10.0.99.20",
     :pub_ip => "192.168.99.20"
   },
-  "db" => {
-    :ip => "10.0.99.30"
-  },
-  "backup" => {
-    :ip => "10.0.99.40"
-  },
-  "ca" => {
-    :ip => "10.0.99.50"
-  }
+  # "db" => {
+  #   :ip => "10.0.99.30"
+  # },
+  # "backup" => {
+  #   :ip => "10.0.99.40"
+  # },
+  # "ca" => {
+  #   :ip => "10.0.99.50"
+  # }
 }
 
 Vagrant.configure("2") do |config|
@@ -97,13 +97,6 @@ Vagrant.configure("2") do |config|
         SCRIPT
       end
     end
-
-    # install desktop environment and firefox (TODO maybe write ansible playbook for setup)
-    # clientconf.vm.provision "shell", inline: <<-SCRIPT
-    #   sudo apt-get update
-    #   sudo apt-get install -y xfce4
-    #   sudo apt-get install -y virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11 firefox-esr
-    # SCRIPT
   end
 
   # setup config machine
@@ -126,10 +119,11 @@ Vagrant.configure("2") do |config|
 
     # provision machines with config as master
     configconf.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "setup.yml"
+      ansible.playbook = "site.yml"
       ansible.limit = "all"
       ansible.install = true
-      ansible.inventory_path = "inventory"
+      ansible.verbose = true
+      ansible.inventory_path = "production"
       ansible.provisioning_path = "/vagrant/shared/ansible"
     end
   end
