@@ -1,0 +1,61 @@
+- name: Download Mysql
+  apt:
+    deb: https://dev.mysql.com/get/mysql-apt-config_0.8.24-1_all.deb
+    state: present
+- name: Installing Mysql  and dependencies
+  package:
+   name: "{{item}}"
+   state: present
+   update_cache: yes
+  loop:
+   - mysql-server
+   - mysql-client
+   - python3-mysqldb
+   - libmysqlclient-dev
+  become: yes
+- name: start and enable mysql service
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+- name: creating mysql user (medium_post)
+  mysql_user:
+    name: "{{db_user}}"
+    password: "{{db_pass}}"
+    priv: '*.*:ALL'
+    host: '%'
+    state: present
+- name: creating imovies
+  mysql_db:
+    name: "{{db_name}}"
+    state: present
+- name: copy imovies_users dump
+  copy: src=../files/imovies_users.sql dest=/var/tmp/imovies_users.sql owner=root group=root mode=0600
+- name: import imovies_users db
+  mysql_db: name=imovies state=import target=/var/tmp/imovies_users.sql
+- name: copy imovies_ca tables
+  copy: src=../files/imovies_ca_tables.sql dest=/var/tmp/imovies_ca_tables.sql owner=root group=root mode=0600
+- name: import imovies_ca tables
+  mysql_db: name=imovies state=import target=/var/tmp/imovies_ca_tables.sql
+- name: Enable remote login to mysql
+  lineinfile:
+     path: /etc/mysql/mysql.conf.d/mysqld.cnf
+     regexp: '^bind-address'
+     line: 'bind-address = 0.0.0.0'
+     backup: yes
+  notify:
+     - Restart mysql
+
+
+- name: Enable TLS connection to mysql
+  lineinfile:
+     path: /etc/mysql/mysql.conf.d/mysqld.cnf
+     line: "{{ item }}"
+  with_items:
+    - 'ssl_ca=/var/lib/mysql/ca.pem'
+    - 'ssl_cert=/var/lib/mysql/server-cert.pem'
+    - 'ssl_key=/var/lib/mysql/server-key.pem'
+    - 'require_secure_transport=ON'
+  become: true
+  notify:
+     - Restart mysql

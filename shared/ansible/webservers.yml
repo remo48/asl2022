@@ -1,0 +1,5 @@
+- name: setup web
+  become: yes
+  hosts: web
+  roles:
+    - web
