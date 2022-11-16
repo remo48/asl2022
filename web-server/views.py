@@ -1,6 +1,7 @@
 import os
-from flask import render_template, request, redirect, Flask, send_file
+from flask import render_template, request, redirect, send_file
 import logging
+from flask.blueprints import Blueprint
 from flask_login import (
     login_user,
     fresh_login_required,
@@ -12,98 +13,116 @@ from db_queries import *
 from ca_queries import *
 from utils import *
 
+web = Blueprint(
+    "web",
+    __name__,
+    template_folder="templates",
+)
 
-app = Flask(__name__)
-app.config.from_pyfile("config.py")
 login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.session_protection = "strong"
 
 
 @login_manager.user_loader
-def load_user(user_id):
-    user = getUserById(user_id)
-    return User(user)
+def load_user(uid):
+    user = getUserByUid(uid)
+    return user
 
 
-@app.route("/login")
+@web.route("/login")
 def login():
-    logging.info("login")
+    logging.info("Page: Login")
     return render_template("login.html")
 
 
-@app.route("/logout")
+@web.route("/logout")
 @fresh_login_required
 def logout():
+    logging.info("Page: Login, User: %s", current_user.uid)
     logout_user()
     return redirect("/login")
 
 
-@app.route("/login", methods=["POST"])
+@web.route("/login", methods=["POST"])
 def login_post():
     uid = request.form.get("uid")
+    logging.info("Page: Login, User: %s", uid)
     password = request.form.get("password")
-    user = User(getUserByUid(uid))
+    user = getUserByUid(uid)
     if not user or not checkPassword(password, user.pwd):
-        return render_template("login.html")
+        logging.info("Page: Login, User: %s not found", uid)
+        return render_template("login.html", error="Invalid credentials")
 
     login_user(user)
+    logging.info("Page: Login Successful, User: %s", uid)
     if current_user.is_admin():
+        logging.info("Page: Login Successful, Redirect to Admin, User: %s", uid)
         return redirect("/admin")
     return redirect("/profile")
 
 
-@app.route("/login_cert")
+@web.route("/login_cert")
 def login_cert():
+    logging.info("Page: Login")
     return render_template("login_cert.html")
 
 
-@app.route("/get_challenge", methods=["POST"])
+@web.route("/get_challenge", methods=["POST"])
 def challenge():
-    serial_number = int(request.json.get("serial"))
+    serial_number = request.json.get("serial")
+    logging.info("Page: Get challenge, Serial: %s", serial_number)
     deleteChallengesBySerialNumber(serial_number)
-    # challenge = os.urandom(64).hex()
-    challenge = (b"a" * 64).hex()
+    challenge = os.urandom(64).hex()
     createChallenge(serial_number, challenge)
     return {"challenge": challenge}
 
 
-@app.route("/solve_challenge", methods=["POST"])
+@web.route("/solve_challenge", methods=["POST"])
 def solve_challenge():
     signature = request.json.get("signature")
     serial = request.json.get("serial")
-
+    logging.info("Page: Solve challenge, Serial: %s", serial)
     challenge = getChallengeBySerial(serial)
 
     if not challenge:
-        print("No challenge found")
-        return {"error": "Error"}, 404
+        logging.info("Page: Solve challenge, Serial: %s not found", serial)
+        return render_template("login_credentials.html", error="Invalid credentials")
 
-    email = verifyChallenge(challenge, signature, serial)
-    if not email:
-        print("Challenge not verified")
-        return {"error": "Error"}, 404
+    if not verifyChallenge(challenge.challenge, signature, serial):
+        logging.info("Page: Solve challenge, Serial: %s not verified", serial)
+        return render_template("login_credentials.html", error="Invalid credentials")
 
-    user = User(getUserByEmail(email))
+    user_uid = getUidBySerial(serial)
+    user = getUserByUid(user_uid)
+
     if not user:
-        print("User not found")
-        return {"error": "Error"}, 404
+        logging.info("Page: Solve challenge, User: %s not found", user_uid)
+        return render_template("login_credentials.html", error="Invalid credentials")
 
     login_user(user)
+    logging.info("Page: Login Successful, User: %s", user_uid)
     if current_user.is_admin():
+        logging.info("Page: Login Successful, Redirect to Admin, User: %s", user_uid)
         return redirect("/admin")
     return redirect("/profile")
 
 
-@app.route("/profile")
+@web.route("/profile")
 @fresh_login_required
 def profile():
+    logging.info("Page: Profile, User: %s", current_user.uid)
+    if current_user.is_admin():
+        logging.info("Page: Profile, Redirect to Admin, User: %s", current_user.uid)
+        return redirect("/admin")
     return render_template("profile.html")
 
 
-@app.route("/profile", methods=["POST"])
+@web.route("/profile", methods=["POST"])
 @fresh_login_required
 def profile_post():
+    logging.info("Page: Profile, User: %s", current_user.uid)
+    if current_user.is_admin():
+        logging.info("Page: Profile, Redirect to Admin, User: %s", current_user.uid)
+        return redirect("/admin")
     last_name = request.form.get("lastname")
     first_name = request.form.get("firstname")
     email = request.form.get("email")
@@ -112,17 +131,25 @@ def profile_post():
     return redirect("/profile")
 
 
-@app.route("/certificates")
+@web.route("/certificates")
 @fresh_login_required
 def certificates():
+    logging.info("Page: Certificates, User: %s", current_user.uid)
+    if current_user.is_admin():
+        logging.info("Page: Certificates, Redirect to Admin, User: %s", current_user.uid)
+        return redirect("/admin")
     serials = getSerialNumbersByUid(current_user.uid)
     certs = getCertificatesBySerialNumbers(serials)
     return render_template("certificates.html", certs=certs)
 
 
-@app.route("/certificates", methods=["POST"])
+@web.route("/certificates", methods=["POST"])
 @fresh_login_required
 def certificates_post():
+    logging.info("Page: New Certificate, User: %s", current_user.uid)
+    if current_user.is_admin():
+        logging.info("Page: New Certificate, Redirect to Admin, User: %s", current_user.uid)
+        return redirect("/admin")
     cert = getNewCertificate(
         current_user.uid,
         current_user.firstname,
@@ -135,8 +162,8 @@ def certificates_post():
 
     data = cert["data"]
 
-    if not os.path.exists("certs"):
-        os.makedirs("certs")
+    if not os.path.exists("client_certs"):
+        os.makedirs("client_certs")
 
     filename = f"client_certs/{serial}.p12"
     with open(filename, "wb") as f:
@@ -147,9 +174,13 @@ def certificates_post():
     return new_cert
 
 
-@app.route("/revoke", methods=["POST"])
+@web.route("/revoke", methods=["POST"])
 @fresh_login_required
 def revoke():
+    logging.info("Page: Revoke, User: %s", current_user.uid)
+    if current_user.is_admin():
+        logging.info("Page: Revoke, Redirect to Admin, User: %s", current_user.uid)
+        return redirect("/admin")
     for _, serial in request.form.items():
         if current_user.uid == getUidBySerial(serial):
             revokeCertificate(serial)
@@ -157,9 +188,11 @@ def revoke():
     return redirect("/certificates")
 
 
-@app.route("/admin")
+@web.route("/admin")
 @fresh_login_required
 def admin():
+    logging.info("Page: Admin, User: %s", current_user.uid)
     if not current_user.is_admin():
+        logging.info("Page: Admin, Redirect to Profile, User: %s", current_user.uid)
         return redirect("/profile")
     return render_template("admin.html", admin_info=getAdminInfo())

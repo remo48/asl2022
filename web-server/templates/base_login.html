@@ -4,4 +4,10 @@
   <a href="/login_cert">Certificate Login</a>
 </nav>
 
+{% if error %}
+<div class="alert alert-danger" role="alert">
+  {{ error }}
+</div>
+{% endif %}
+
 {% block login_content %} {% endblock %} {% endblock %}

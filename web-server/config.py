@@ -1,7 +1,10 @@
 from logging.config import dictConfig
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
+
 LOG_CONFIG = {
     "version": 1,
     "formatters": {
@@ -20,4 +23,4 @@ LOG_CONFIG = {
     "root": {"level": "INFO", "handlers": ["wsgi"]},
 }
 dictConfig(LOG_CONFIG)
-
+SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:secret@localhost:3306/imovies"
