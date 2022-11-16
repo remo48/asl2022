@@ -63,6 +63,7 @@ class CA:
         crl.sign(self.certificate, self.privatekey, b'sha256')
         location = os.path.join(self.crldir, self.name + "_crl.pem")
         self.write_crl(location, crl)
+        self.crl = crl
 
     def get_key(self):
         """
@@ -133,6 +134,7 @@ class CA:
                 serial.seek(0)
                 serial.write(str(int(serialnr) + inc))
                 serial.truncate()
+        print("Issued new serial number", serialnr)
         return int(serialnr)
 
     def get_times(self):
@@ -173,7 +175,7 @@ class CA:
     
     def load_crl(self, location):
         with open(os.path.join(self.crldir, location), "rt") as _crl:
-            return crypto.load_certificate(crypto.FILETYPE_PEM, _crl.read())
+            return crypto.load_crl(crypto.FILETYPE_PEM, _crl.read())
 
     def write_key(self, location, key):
          with open(location, "wb") as _key:
@@ -259,7 +261,7 @@ class InterCA(CA):
         pkc.set_certificate(certificate)
         pkc.set_privatekey(key)
 
-        location = os.path.join(self.certs, serialnr)
+        location = os.path.join(self.certs, str(serialnr))
         self.write_cert(location + "_cert.pem", certificate)
         self.write_key(location + "_key.pem", key)
         return pkc.export()
