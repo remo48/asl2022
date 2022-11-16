@@ -17,7 +17,6 @@ class CA:
 
         self.keys = self.create_folder("keys")
         self.certs = self.create_folder("certs")
-        self.csr = self.create_folder("csr")
         self.crldir = self.create_folder("crl")
         self.index = self.create_folder("index.txt", folder=False)
         self.serial = self.create_folder("serial", folder=False)
@@ -220,14 +219,18 @@ class InterCA(CA):
     def verifySignature(self, challenge, signature, serialnr) -> bool:
         """
         Verifies that a given signature matches a challenge signed by the certificate holder given the serial number.
-
-        TODO: Probably doesn't work..
         """
-        certificate = self.get_cert_by_serial_nr(serialnr)
-        public_key = certificate.get_pubkey().to_cryptography_key()
-        k = crypto.PKey()
-        k.to_cryptography_key()
-        return challenge == public_key.decrypt(signature)
+        try:
+            certificate = self.get_cert_by_serial_nr(serialnr)
+            crypto.verify(
+                cert = certificate,
+                signature = signature,
+                data = challenge,
+                digest = 'sha256'
+            )
+            return True
+        except:
+            return False
 
     def getCertificatesBySerialNumbers(self, numbers) -> list:
         """
@@ -269,9 +272,8 @@ class InterCA(CA):
         pkc.set_certificate(certificate)
         pkc.set_privatekey(key)
 
-        location = os.path.join(self.certs, str(serialnr))
-        self.write_cert(location + "_cert.pem", certificate)
-        self.write_key(location + "_key.pem", key)
+        self.write_cert(os.path.join(self.certs, str(serialnr)) + "_cert.pem", certificate)
+        self.write_key(os.path.join(self.keys, str(serialnr)) + "_key.pem", key)
         return pkc.export()
 
     def revoke_certificate(self, serialnr) -> bool:
