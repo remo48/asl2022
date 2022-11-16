@@ -1,5 +1,4 @@
-from flask import Flask, request, abort, jsonify, make_response, send_file
-
+from flask import Flask, request, jsonify, make_response
 from ca import RootCA, InterCA
 
 root = RootCA("root")
@@ -42,7 +41,7 @@ def verify_signature():
         response.status_code = 400
         return response
 
-@app.route('eca/get_certificates_by_serial_numbers', methods=['GET'])
+@app.route('get_certificates_by_serial_numbers', methods=['GET'])
 def get_certificates_by_serial_numbers():
     if valid_request():
         req = request.json()
@@ -59,7 +58,7 @@ def get_certificates_by_serial_numbers():
         response.status_code = 400
         return response
 
-@app.route('eca/create_certificate', method=['POST'])
+@app.route('create_certificate', method=['POST'])
 def create_certificate():
     if valid_request():
         req = request.json()
@@ -79,7 +78,7 @@ def create_certificate():
         response.status_code = 400
         return response
 
-@app.route('eca/revoke_certificate', method=['POST'])
+@app.route('revoke_certificate', method=['POST'])
 def revoke_cert():
     if valid_request():
         req = request.json()
@@ -96,7 +95,7 @@ def revoke_cert():
         response.status_code = 400
         return response
 
-@app.route('eca/adminInfo', method=['GET'])
+@app.route('adminInfo', method=['GET'])
 def admin_info():
     if valid_request():
         req = request.json()

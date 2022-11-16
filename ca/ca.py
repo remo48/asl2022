@@ -24,7 +24,7 @@ class CA:
 
     def create_folder(self, name, folder: bool = True) -> str:
         """
-        Looks for a file or folder and if there is none creates a new one. This should only be used when setting up the ca.
+        Looks for a file or folder and if there is none creates a new one. This should only be the case when setting up the ca.
         """
         newDir = os.path.join(self.dir, name)
         if not os.path.exists(newDir):
@@ -37,20 +37,26 @@ class CA:
         return newDir
 
     def write_index(self, serialnr):
-        lines = open(self.index, 'r').readlines()
-        lines[serialnr] = "V"
-        out = open(self.index, 'w')
-        out.writelines(lines)
-        out.close()
+        """
+        Writes down the serialnr of the issued certificate and its state ('V': valid)
+        """
+        with open(self.index, 'a') as index:
+            index.write(f"{serialnr} V")
 
     def revoke_index(self, serialnr):
-        lines = open(self.index, 'r').readlines()
-        lines[serialnr] = "R"
-        out = open(self.index, 'w')
-        out.writelines(lines)
-        out.close()
+        """
+        Writes a 'R' (revoked) to the line with the matching serialnr
+        """
+        file = open(self.index, 'r')
+        for line in file:
+            line = line.strip()
+            if(line == f"{serialnr} V"):
+                line.replace(f"{serialnr} V", f"{serialnr} R")
 
     def update_crl(self, revoke:crypto.Revoked, lastUpdate, nextUpdate):
+        """
+        Updates the crl (certificate revocation list) with newly revoked certificates
+        """
         crl = crypto.CRL()
         crl.set_version(2)
         crl.set_lastUpdate(lastUpdate)
@@ -134,7 +140,6 @@ class CA:
                 serial.seek(0)
                 serial.write(str(int(serialnr) + inc))
                 serial.truncate()
-        print("Issued new serial number", serialnr)
         return int(serialnr)
 
     def get_times(self):
@@ -233,7 +238,10 @@ class InterCA(CA):
             certificates.append(self.get_cert_by_serial_nr(number))
         return certificates
 
-    def create_certificate(self, firstName, lastName, email, uid) -> bool:
+    def create_certificate(self, firstName, lastName, email, uid):
+        """
+        Creates a certificate
+        """
         key = self.create_key()
         lastUpdate, nextUpdate = self.get_times()
         serialnr = self.get_serial_number()
@@ -267,9 +275,11 @@ class InterCA(CA):
         return pkc.export()
 
     def revoke_certificate(self, serialnr) -> bool:
+        """
+        Revokes the certificate with the given serial number. Returns a bool indicating wheter the revocation has been successful or not
+        """
         for file in os.listdir(self.certs):
-            filename = os.path.join(self.certs, file)
-            certificate = self.load_cert(os.path.join(self.certs, file))
+            certificate = self.load_cert(file)
             if certificate.get_serial_number() == serialnr:
                 lastUpdate, nextUpdate = self.get_times()
                 revoke = crypto.Revoked()
@@ -281,6 +291,9 @@ class InterCA(CA):
         return False
 
     def adminInfo(self):
+        """
+        Returns basic admin info as specified in the project description
+        """
         return {
             'certificates': len([name for name in os.listdir(self.certs)]),
             'revocations': len(self.crl.get_revoked()),
