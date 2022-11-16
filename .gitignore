@@ -1,2 +1,4 @@
 # General
 .vagrant/
+.idea/
+__pycache__/

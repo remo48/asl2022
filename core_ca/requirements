@@ -1,0 +1,8 @@
+
+**Root CA:**
+- Upon CSR generates new key pair.
+- Store private key to encrypt private key and certificate.
+
+***Intermediate CA:***
+- Issue certificates for network internal TLS communication and user certificates
+- Sign certificate provided from ROOT CA for user certificates.
