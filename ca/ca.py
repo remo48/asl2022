@@ -241,7 +241,7 @@ class InterCA(CA):
             certificates.append(self.get_cert_by_serial_nr(number))
         return certificates
 
-    def create_certificate(self, firstName, lastName, email, uid):
+    def create_certificate(self, name):
         """
         Creates a certificate
         """
@@ -251,8 +251,7 @@ class InterCA(CA):
         issuer = self.certificate.get_subject()
 
         request = crypto.X509Req()
-        request.get_subject().CN = str(uid)
-        request.get_subject().emailAddress = str(email)
+        request.get_subject().CN = str(name)
         request.get_subject().O = "iMovies"
         request.set_pubkey(key)
         request.sign(key, 'sha256')
@@ -272,8 +271,8 @@ class InterCA(CA):
         pkc.set_certificate(certificate)
         pkc.set_privatekey(key)
 
-        self.write_cert(os.path.join(self.certs, str(serialnr)) + "_cert.pem", certificate)
-        self.write_key(os.path.join(self.keys, str(serialnr)) + "_key.pem", key)
+        self.write_cert(os.path.join(self.certs, str(name)) + "_cert.pem", certificate)
+        self.write_key(os.path.join(self.keys, str(name)) + "_key.pem", key)
         return pkc.export()
 
     def revoke_certificate(self, serialnr) -> bool:
