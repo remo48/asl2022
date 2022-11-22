@@ -1,18 +1,42 @@
-- name: Download Mysql
+- name: Add user "web-server"
+  user:
+    name: web-server
+
+- name: copy web-server
+  copy: 
+    src: ../../../../../web-server/
+    dest: /home/web-server/web-server 
+    owner: web-server 
+    group: web-server
+    mode: u=rwx
+
+- name: Install specified python requirements
+  ansible.builtin.pip:
+    requirements: /home/web-server/web-server/requirements.txt
+
+- name: install setfacl
   apt:
-    deb: https://dev.mysql.com/get/mysql-apt-config_0.8.24-1_all.deb
+    name: acl
     state: present
-- name: Installing Mysql and dependencies
-  package:
-   name: "{{item}}"
-   state: present
-   update_cache: yes
-  loop:
-   - mysql-client
-   - python3-mysqldb
-   - libmysqlclient-dev
+
+- name: create log file
+  file:
+    path: /home/web-server/web-server/web-server.log
+    owner: web-server
+    group: web-server
+    attributes: +a
+    mode: u=rw
+
+# - name: Copy certificates for tls public connections
+# - name: Copy certificates for ca, db for server authentication
+# - name: Copy certificates, key for internal tls connections, client authentication
+
+- name: move service into /etc
+  command: mv /home/web-server/web-server/web-server.service /etc/systemd/system
+
+- name: start web server service
+  command: sudo systemctl start web-server
   become: yes
+  become_user: web-server
 
 
-- name: copy db connect script
-  copy: src=../files/imovies-connect.py dest=/var/tmp/imovies-connect.py owner=root group=root mode=0770
