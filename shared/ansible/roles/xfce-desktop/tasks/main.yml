@@ -1,11 +1,5 @@
 - name: Install xfce4 desktop
   apt:
-    name: "{{ item }}"
+    name: "{{ xfce_packages }}"
     state: present
-  with_items:
-    - "{{ xfce_packages }}"
-
-- name: Restart login manager service
-  service:
-    name: "{{ xfce_login_manager_service }}"
-    state: restarted
+  notify: Restart login manager service

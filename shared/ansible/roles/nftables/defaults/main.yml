@@ -1,0 +1,10 @@
+---
+nftables_is_internal_host: false
+nftables_internal_network:
+
+
+nftables_config_input_policy: drop
+nftables_config_input_rules: []
+
+nftables_config_output_policy: accept
+nftables_config_output_rules: []

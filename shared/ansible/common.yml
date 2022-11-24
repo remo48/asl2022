@@ -1,5 +1,5 @@
 ---
-- hosts: web
+- hosts: all
   become: yes
   tasks:
     - name: Update and upgrade apt packages
@@ -7,6 +7,9 @@
         upgrade: yes
         update_cache: yes
 
+- hosts: dbservers, webservers
+  become: yes
+  tasks:
     - name: Install vim
       apt: name=vim update_cache=true state=present
 
@@ -14,6 +17,6 @@
       apt: name=python3-pip update_cache=true state=present force_apt_get=yes
 
     - name: Install Python packages
-      pip: name={{ item }}
-      with_items:
-        - mysql-connector-python
+      pip: 
+        name: mysql-connector-python
+        

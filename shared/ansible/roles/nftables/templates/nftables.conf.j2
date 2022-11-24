@@ -1,0 +1,40 @@
+#!/usr/sbin/nft -f
+
+# {{ ansible_managed }}
+
+# clear all prior state
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority 0;
+    policy {{ nftables_config_input_policy }};
+
+    ct state invalid drop
+    ct state established,related accept
+    iif "lo" accept
+
+    # allow ssh per default
+    {% if nftables_is_internal_host and nftables_internal_network -%}
+    ip saddr {{ nftables_internal_network }} tcp dport 22 accept
+    {% else %}
+    tcp dport 22 accept
+    {% endif %}
+
+    {% for input in nftables_config_input_rules -%}
+    {{ input }}
+    {% endfor %}
+
+  }
+
+  chain output {
+    type filter hook output priority 0;
+    policy {{ nftables_config_output_policy }};
+
+    {% for output in nftables_config_output_rules -%}
+    {{ output }}
+    {% endfor %}
+
+  }
+}
+

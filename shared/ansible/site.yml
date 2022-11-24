@@ -6,4 +6,4 @@
 # - import_playbook: dbservers.yml
 # - import_playbook: caservers.yml
 - import_playbook: webservers.yml
-# - import_playbook: clientservers.yml
+- import_playbook: clientservers.yml

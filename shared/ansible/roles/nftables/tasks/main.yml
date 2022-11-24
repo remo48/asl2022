@@ -1,0 +1,32 @@
+- name: Install nftables packages
+  package:
+    name: nftables
+    state: present
+    update_cache: yes
+
+- name: Enable and start nftables service
+  systemd:
+    name: nftables.service
+    state: started
+    enabled: yes
+  become: true
+
+- name: Ensure nftables conf directory exists
+  file:
+    path: /etc/nftables
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Configure nftables
+  template:
+    src: nftables.conf.j2
+    dest: /etc/nftables/nftables.conf
+    owner: root
+    group: root
+    mode: 0644
+    validate: nft -c -f %s
+  notify:
+    - Reload nftables
+

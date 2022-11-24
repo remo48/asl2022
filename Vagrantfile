@@ -27,15 +27,15 @@ hosts = {
     :ip => "10.0.99.20",
     :pub_ip => "192.168.99.20"
   },
-  # "db" => {
-  #   :ip => "10.0.99.30"
-  # },
-  # "backup" => {
-  #   :ip => "10.0.99.40"
-  # },
-  # "ca" => {
-  #   :ip => "10.0.99.50"
-  # }
+  "db" => {
+    :ip => "10.0.99.30"
+  },
+  "backup" => {
+    :ip => "10.0.99.40"
+  },
+  "ca" => {
+    :ip => "10.0.99.50"
+  }
 }
 
 Vagrant.configure("2") do |config|
@@ -122,10 +122,8 @@ Vagrant.configure("2") do |config|
       ansible.playbook = "site.yml"
       ansible.limit = "all"
       ansible.install = true
-      ansible.verbose = true
       ansible.inventory_path = "production"
       ansible.provisioning_path = "/vagrant/shared/ansible"
     end
   end
-
 end
