@@ -1,0 +1,15 @@
+gunicorn wsgi:app 
+
+[Unit]
+Description=Web server instance
+After=network.target
+
+[Service]
+User=web-server
+Group=web-server
+WorkingDirectory=/home/vagrant/web-server
+# ExecStart=gunicorn --bind imovies.ch:5000 --certfile=/home/web-server/web-server/certs/tls_cert.pem --keyfile=/home/web-server/web-server/certs/tls-key.pem
+ExecStart=gunicorn wsgi:app
+
+[Install]
+WantedBy=multi-user.target

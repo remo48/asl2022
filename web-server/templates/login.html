@@ -1,0 +1,16 @@
+{% extends "base_login.html" %} {% block login_content %}
+  <form action="/login" method="POST">
+    <div
+      class="container-fluid d-flex flex-column  mt-4 gap-4"
+    >
+      <input type="text" name="uid" id="uid" placeholder="Uid" />
+      <input
+        type="password"
+        name="password"
+        id="password"
+        placeholder="Password"
+      />
+      <button type="submit">Login</button>
+    </div>
+  </form>
+{% endblock %}

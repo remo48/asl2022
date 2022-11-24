@@ -1,0 +1,40 @@
+{% extends "base_menu.html" %} {% block menu_content %}
+<h1>Certificates</h1>
+{% if error %}
+<div class="alert alert-danger" role="alert">
+{{ error }}
+</div>
+{% endif %}
+<form
+  name="get_cert"
+  id="get_cert"
+  action="/certificates"
+  method="post"
+  class="d-flex flex-column gap-2"
+>
+  <button type="submit" value="get_certificate">Get new Certificate</button>
+</form>
+
+<ul>
+  {% for certificate in certs %}
+  <li>
+    {{ certificate.serial }}
+    <form
+      name="form_{{certificate.serial}}"
+      id="form_{{certificate.serial}}"
+      action="/revoke"
+      method="post"
+    >
+      <input
+        type="text"
+        name="cert_{{certificate.serial}}"
+        id="cert_{{certificate.serial}}"
+        value="{{certificate.serial}}"
+      />
+      <button type="submit" value="revoke">Revoke</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+
+{% endblock %}
