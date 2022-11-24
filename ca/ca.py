@@ -241,7 +241,7 @@ class InterCA(CA):
             certificates.append(self.get_cert_by_serial_nr(number))
         return certificates
 
-    def create_certificate(self, name):
+    def create_certificate(self, firstName, lastName, email, uid):
         """
         Creates a certificate
         """
@@ -251,7 +251,7 @@ class InterCA(CA):
         issuer = self.certificate.get_subject()
 
         request = crypto.X509Req()
-        request.get_subject().CN = str(name)
+        request.get_subject().CN = f"{firstName} {lastName}, {email}, {uid}"
         request.get_subject().O = "iMovies"
         request.set_pubkey(key)
         request.sign(key, 'sha256')
@@ -265,15 +265,14 @@ class InterCA(CA):
         certificate.set_subject(request.get_subject())
         certificate.set_pubkey(key)
         certificate.sign(self.privatekey, 'sha256')
-
         pkc = crypto.PKCS12()
         pkc.set_ca_certificates([self.root.certificate, self.certificate])
         pkc.set_certificate(certificate)
         pkc.set_privatekey(key)
 
-        self.write_cert(os.path.join(self.certs, str(name)) + "_cert.pem", certificate)
-        self.write_key(os.path.join(self.keys, str(name)) + "_key.pem", key)
-        return pkc.export()
+        self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
+        self.write_key(os.path.join(self.keys, str(serialnr)) + "_key.pem", key)
+        return pkc.export(), serialnr
 
     def revoke_certificate(self, serialnr) -> bool:
         """
@@ -296,7 +295,7 @@ class InterCA(CA):
         Returns basic admin info as specified in the project description
         """
         return {
-            'certificates': len([name for name in os.listdir(self.certs)]),
-            'revocations': len(self.crl.get_revoked()),
+            'certificates': len([name for name in os.listdir(self.certs)]) if self.certs else 0,
+            'revocations': len(self.crl.get_revoked()) if self.crl.get_revoked() else 0,
             "serial_nr": self.get_serial_number(0)
         }

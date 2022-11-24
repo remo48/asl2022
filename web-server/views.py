@@ -12,7 +12,9 @@ from flask_login import (
 from db_queries import *
 from ca_queries import *
 from utils import *
-
+from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates, serialize_key_and_certificates
+from cryptography.hazmat.primitives.serialization import NoEncryption
+import base64
 web = Blueprint(
     "web",
     __name__,
@@ -139,7 +141,8 @@ def certificates():
         logging.info("Page: Certificates, Redirect to Admin, User: %s", current_user.uid)
         return redirect("/admin")
     serials = getSerialNumbersByUid(current_user.uid)
-    certs = getCertificatesBySerialNumbers(serials)
+    certs = getCertificatesBySerialNumbers([serial.serial_number for serial in serials])
+    certs = certs if certs else []
     return render_template("certificates.html", certs=certs)
 
 
@@ -160,14 +163,16 @@ def certificates_post():
     serial = cert["serial"]
     addCertificate(serial, current_user.uid)
 
-    data = cert["data"]
 
+    # TODO: cert needs to be written to file correctly  
+    data = cert["data"].encode()
+   
     if not os.path.exists("client_certs"):
         os.makedirs("client_certs")
 
     filename = f"client_certs/{serial}.p12"
     with open(filename, "wb") as f:
-        f.write(data.encode("utf-8"))
+        f.write(data)
 
     new_cert = send_file(filename, as_attachment=True)
     os.remove(filename)
