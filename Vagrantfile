@@ -122,10 +122,8 @@ Vagrant.configure("2") do |config|
       ansible.playbook = "site.yml"
       ansible.limit = "all"
       ansible.install = true
-      ansible.verbose = true
       ansible.inventory_path = "production"
       ansible.provisioning_path = "/vagrant/shared/ansible"
     end
   end
-
 end

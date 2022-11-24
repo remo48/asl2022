@@ -1,0 +1,2 @@
+---
+nftables_internal_network: 10.0.99.1/24

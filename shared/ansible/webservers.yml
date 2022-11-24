@@ -1,5 +1,5 @@
 - name: setup web
   become: yes
-  hosts: web
+  hosts: webservers
   roles:
     - web
