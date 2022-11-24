@@ -123,3 +123,6 @@ def request_not_found(e):
     })
     response.status_code = 400
     return response
+
+if __name__ == "__main__":
+    app.run(host='10.0.99.50')

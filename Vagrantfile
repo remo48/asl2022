@@ -44,15 +44,14 @@ Vagrant.configure("2") do |config|
 		vb.customize ["modifyvm", :id, "--cpuexecutioncap", CPU_CAP_PERCENTAGE]
 	end
 
+  config.vm.synced_folder ".", "/vagrant", mount_options: ["dmode=775,fmode=664"]
+
   # set up internal hosts
   hosts.each do |hostname, info|
     config.vm.define hostname do |hostconf|
       hostconf.vm.box = VM_BOX
       hostconf.vm.hostname = hostname
       hostconf.vm.network "private_network", ip: "#{info[:ip]}", virtualbox__intnet: INTERNAL_NETWORK
-
-      # disable synced folder
-      hostconf.vm.synced_folder ".", "/vagrant", disabled: true
 
       # add public ip address
       if info.key?(:pub_ip)
@@ -110,6 +109,8 @@ Vagrant.configure("2") do |config|
       vb.name = "asl-#{configvm[:name]}"
       vb.memory = MEMORY
     end
+
+    
 
     hosts.each do |peer_hostname, peer_info|
       configconf.vm.provision "shell", inline: <<-SCRIPT

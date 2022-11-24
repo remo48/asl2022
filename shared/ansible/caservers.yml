@@ -1,0 +1,4 @@
+- hosts: caservers
+  become: yes
+  roles:
+    - ca

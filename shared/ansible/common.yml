@@ -20,3 +20,12 @@
       pip: 
         name: mysql-connector-python
         
+- hosts: dbservers, webservers, caservers, backupservers
+  become: yes
+  tasks:
+    - name: Add users
+      user:
+        name: "{{ username }}"
+        password_lock: yes
+        shell: "{{ usershell }}"
+        append: yes
