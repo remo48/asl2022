@@ -251,9 +251,9 @@ class InterCA(CA):
         """
         revoked_certs = self.crl.get_revoked()
         for rvk in revoked_certs:
-            if rvk.get_serial() == hex(serial_nr).encode():
-                return False
-        return True
+            if rvk.get_serial() == str(serial_nr).encode():
+                return True
+        return False
 
     def getCertificatesBySerialNumbers(self, numbers) -> list:
         """
