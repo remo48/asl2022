@@ -1,5 +1,5 @@
 import os
-from flask import render_template, request, redirect, send_file
+from flask import render_template, request, redirect, send_file, jsonify
 import logging
 from flask.blueprints import Blueprint
 from flask_login import (
@@ -12,8 +12,9 @@ from flask_login import (
 from db_queries import *
 from ca_queries import *
 from utils import *
+from OpenSSL import crypto
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates, serialize_key_and_certificates
-from cryptography.hazmat.primitives.serialization import NoEncryption
+from cryptography.hazmat.primitives.serialization import NoEncryption, KeySerializationEncryption, BestAvailableEncryption
 import base64
 web = Blueprint(
     "web",
@@ -64,6 +65,8 @@ def login_post():
 
 @web.route("/login_cert")
 def login_cert():
+    print("CERT")
+    print(request)
     logging.info("Page: Login")
     return render_template("login_cert.html")
 
@@ -87,18 +90,19 @@ def solve_challenge():
 
     if not challenge:
         logging.info("Page: Solve challenge, Serial: %s not found", serial)
-        return render_template("login_credentials.html", error="Invalid credentials")
+        return jsonify({"verified": False})
 
     if not verifyChallenge(challenge.challenge, signature, serial):
+        print("GOTO ")
         logging.info("Page: Solve challenge, Serial: %s not verified", serial)
-        return render_template("login_credentials.html", error="Invalid credentials")
+        return jsonify({"verified": False})
 
     user_uid = getUidBySerial(serial)
     user = getUserByUid(user_uid)
 
     if not user:
         logging.info("Page: Solve challenge, User: %s not found", user_uid)
-        return render_template("login_credentials.html", error="Invalid credentials")
+        return jsonify({"verified": False})
 
     login_user(user)
     logging.info("Page: Login Successful, User: %s", user_uid)
@@ -141,9 +145,18 @@ def certificates():
         logging.info("Page: Certificates, Redirect to Admin, User: %s", current_user.uid)
         return redirect("/admin")
     serials = getSerialNumbersByUid(current_user.uid)
-    certs = getCertificatesBySerialNumbers([serial.serial_number for serial in serials])
+    serials = [serial.serial_number for serial in serials]
+    certs = getCertificatesBySerialNumbers(serials)
     certs = certs if certs else []
-    return render_template("certificates.html", certs=certs)
+    result = []
+    for cert in certs:
+      c = crypto.load_certificate(crypto.FILETYPE_PEM, bytes.fromhex(cert))
+      result.append({
+        "serial": c.get_serial_number(),
+        "subject": c.get_subject().CN,
+      })
+   
+    return render_template("certificates.html", certs=result)
 
 
 @web.route("/certificates", methods=["POST"])
@@ -162,17 +175,18 @@ def certificates_post():
 
     serial = cert["serial"]
     addCertificate(serial, current_user.uid)
-
-
-    # TODO: cert needs to be written to file correctly  
-    data = cert["data"].encode()
+    
+    cert = load_key_and_certificates(bytes.fromhex(cert["data"]), None)
+    print(cert)
+    
+    result = serialize_key_and_certificates(b"serial", cert[0], cert[1], None, NoEncryption())
    
     if not os.path.exists("client_certs"):
         os.makedirs("client_certs")
 
     filename = f"client_certs/{serial}.p12"
     with open(filename, "wb") as f:
-        f.write(data)
+        f.write(result)
 
     new_cert = send_file(filename, as_attachment=True)
     os.remove(filename)
@@ -186,10 +200,12 @@ def revoke():
     if current_user.is_admin():
         logging.info("Page: Revoke, Redirect to Admin, User: %s", current_user.uid)
         return redirect("/admin")
+    print(request.form)
     for _, serial in request.form.items():
         if current_user.uid == getUidBySerial(serial):
-            revokeCertificate(serial)
-            removeCertificate(serial)
+            print(serial)
+            if revokeCertificate(serial):
+              removeCertificate(serial)
     return redirect("/certificates")
 
 

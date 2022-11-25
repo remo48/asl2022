@@ -1,7 +1,11 @@
 import os
 import datetime
 from OpenSSL import crypto
-
+from cryptography.hazmat.primitives.serialization import load_der_parameters
+from cryptography.x509 import load_pem_x509_certificate
+import base64
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.hashes import SHA256
 class CA:
     def __init__(self, dir: str, name: str) -> None:
         """
@@ -67,8 +71,10 @@ class CA:
         crl.add_revoked(revoke)
         crl.sign(self.certificate, self.privatekey, b'sha256')
         location = os.path.join(self.crldir, self.name + "_crl.pem")
+        print(crl)
         self.write_crl(location, crl)
         self.crl = crl
+
 
     def get_key(self):
         """
@@ -157,8 +163,9 @@ class CA:
         """
         for file in os.listdir(self.certs):
             certificate = self.load_cert(os.path.join(self.certs, file))
-            if certificate.get_serial_number() == serialnr:
-                return certificate
+            print(certificate)
+            if certificate.get_serial_number() == int(serialnr):
+                return crypto.dump_certificate(crypto.FILETYPE_PEM, certificate).hex()
         return None
 
     def create_key(self):
@@ -220,23 +227,30 @@ class InterCA(CA):
         """
         Verifies that a given signature matches a challenge signed by the certificate holder given the serial number.
         """
-        try:
-            certificate = self.get_cert_by_serial_nr(serialnr)
-            crypto.verify(
-                cert = certificate,
-                signature = signature,
-                data = challenge,
-                digest = 'sha256'
-            )
-            return True
-        except:
-            return False
+        # try:
+        print("Verifying signature")
+        certificate = self.get_cert_by_serial_nr(serialnr)
+        # certificate = crypto.load_certificate(crypto.FILETYPE_PEM, bytes.fromhex(certificate))
+        print("CERT", certificate)
+        print("SIG", signature)
+        challenge = bytes.fromhex(challenge)
+        print("CH", challenge)
+        certificate = load_pem_x509_certificate(bytes.fromhex(certificate))
+        publickey = certificate.public_key()
+        publickey.verify(signature, challenge, padding.PKCS1v15(), SHA256())
+        print("VERIFIED")
+        return True
+    # except Exception as e:
+        print("WRRO")
+        print(e)
+        return False
 
     def getCertificatesBySerialNumbers(self, numbers) -> list:
         """
         Returns a list of certificates given a list of serial numbers. Certificates that are not found are represented by a "None" object.
         """
         certificates = []
+        print(numbers)
         for number in numbers:
             certificates.append(self.get_cert_by_serial_nr(number))
         return certificates
@@ -280,7 +294,7 @@ class InterCA(CA):
         """
         for file in os.listdir(self.certs):
             certificate = self.load_cert(file)
-            if certificate.get_serial_number() == serialnr:
+            if certificate.get_serial_number() == int(serialnr):
                 lastUpdate, nextUpdate = self.get_times()
                 revoke = crypto.Revoked()
                 revoke.set_serial(str(serialnr).encode())

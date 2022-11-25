@@ -25,11 +25,13 @@ def verify_signature_ica():
 @app.route("/eca/verify_signature", methods=["POST"])
 def verify_signature_eca():
     if valid_request():
+        request.form
         challenge = request.form.get("challenge")
         signature = request.form.get("signature")
         serial = request.form.get("serial")
+        print("SSSIG", signature)
         response = jsonify(
-            {"verified": eca.verifySignature(challenge, signature, serial)}
+            {"verified": eca.verifySignature(challenge, base64.b64decode(signature), serial)}
         )
         return make_response(response, 200)
     else:
@@ -41,7 +43,7 @@ def verify_signature_eca():
 @app.route("/get_certificates_by_serial_numbers", methods=["POST"])
 def get_certificates_by_serial_numbers():
     if valid_request():
-        numbers = request.form.get("numbers")
+        numbers = request.form.getlist("numbers")
         if not numbers:
             response = jsonify({"certificates": None})
             response.status_code = 200
@@ -76,10 +78,11 @@ def create_certificate():
 
 @app.route("/revoke_certificate", methods=["POST"])
 def revoke_cert():
+    print("REVOKE")
     if valid_request():
-        req = request.json()
+        serial = request.form.get("serialNumber")
         response = jsonify(
-            {"status": eca.revokeCertificate(serialNumber=req["serialNumber"])}
+            {"status": eca.revoke_certificate(serial)}
         )
         return make_response(response, 200)
     else:
