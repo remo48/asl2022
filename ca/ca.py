@@ -236,13 +236,24 @@ class InterCA(CA):
         except Exception:
             return False
 
+    def is_revoked(self, serial_nr: int) -> bool:
+        """
+        Checks wheter a certificate with a given serial number has already been revoked
+        """
+        revoked_certs = self.crl.get_revoked()
+        for rvk in revoked_certs:
+            if rvk.get_serial() == str(serial_nr).encode():
+                return True
+        return False
+
     def getCertificatesBySerialNumbers(self, numbers) -> list:
         """
         Returns a list of certificates given a list of serial numbers. Certificates that are not found are represented by a "None" object.
         """
         certificates = []
         for number in numbers:
-            certificates.append(self.get_cert_by_serial_nr(number))
+            if not self.is_revoked(number):
+                certificates.append(self.get_cert_by_serial_nr(number))
         return certificates
 
     def create_certificate(self, firstName, lastName, email, uid):
