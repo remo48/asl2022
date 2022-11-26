@@ -8,15 +8,11 @@ def caPost(url, data=None):
     # return requests.psot(
     #     url, data=data, verify=CA_CERT, cert=(SERVER_CERT, SERVER_KEY)
     # ).json()
-    print(data)
-    print("URL: ", url)
     res = requests.post(url, data=data).json()
-    print(res)
     return res
 
 
 def verifyChallenge(challenge, signature, serial):
-    print(challenge, signature, serial)
     logging.info("CA: Verify challenge, Serial: %s", serial)
     res = caPost(
         "eca/verify_signature",
@@ -27,14 +23,12 @@ def verifyChallenge(challenge, signature, serial):
 
 def getCertificatesBySerialNumbers(serials):
     logging.info("CA: Get Certificates by Serial Numbers, Serials: %s", serials)
-    print(serials)
     res = caPost("get_certificates_by_serial_numbers", data={"numbers": serials})
     return res["certificates"]
 
 
 def revokeCertificate(serial):
     logging.info("CA: Revoke Certificate, Serial: %s", serial)
-    print(serial)
     res = caPost("revoke_certificate", data={"serialNumber": serial})
     return res["status"]
 

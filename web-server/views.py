@@ -13,9 +13,13 @@ from db_queries import *
 from ca_queries import *
 from utils import *
 from OpenSSL import crypto
-from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates, serialize_key_and_certificates
-from cryptography.hazmat.primitives.serialization import NoEncryption, KeySerializationEncryption, BestAvailableEncryption
-import base64
+from cryptography.hazmat.primitives.serialization.pkcs12 import (
+    load_key_and_certificates,
+    serialize_key_and_certificates,
+)
+from cryptography.hazmat.primitives.serialization import NoEncryption
+
+
 web = Blueprint(
     "web",
     __name__,
@@ -48,6 +52,8 @@ def logout():
 @web.route("/login", methods=["POST"])
 def login_post():
     uid = request.form.get("uid")
+    if uid == "ad":
+        return render_template("login.html", error="Admin can only login in via certificate")
     logging.info("Page: Login, User: %s", uid)
     password = request.form.get("password")
     user = getUserByUid(uid)
@@ -65,8 +71,6 @@ def login_post():
 
 @web.route("/login_cert")
 def login_cert():
-    print("CERT")
-    print(request)
     logging.info("Page: Login")
     return render_template("login_cert.html")
 
@@ -93,7 +97,6 @@ def solve_challenge():
         return jsonify({"verified": False})
 
     if not verifyChallenge(challenge.challenge, signature, serial):
-        print("GOTO ")
         logging.info("Page: Solve challenge, Serial: %s not verified", serial)
         return jsonify({"verified": False})
 
@@ -106,10 +109,7 @@ def solve_challenge():
 
     login_user(user)
     logging.info("Page: Login Successful, User: %s", user_uid)
-    if current_user.is_admin():
-        logging.info("Page: Login Successful, Redirect to Admin, User: %s", user_uid)
-        return redirect("/admin")
-    return redirect("/profile")
+    return jsonify({"verified": True})
 
 
 @web.route("/profile")
@@ -126,9 +126,6 @@ def profile():
 @fresh_login_required
 def profile_post():
     logging.info("Page: Profile, User: %s", current_user.uid)
-    if current_user.is_admin():
-        logging.info("Page: Profile, Redirect to Admin, User: %s", current_user.uid)
-        return redirect("/admin")
     last_name = request.form.get("lastname")
     first_name = request.form.get("firstname")
     email = request.form.get("email")
@@ -142,7 +139,9 @@ def profile_post():
 def certificates():
     logging.info("Page: Certificates, User: %s", current_user.uid)
     if current_user.is_admin():
-        logging.info("Page: Certificates, Redirect to Admin, User: %s", current_user.uid)
+        logging.info(
+            "Page: Certificates, Redirect to Admin, User: %s", current_user.uid
+        )
         return redirect("/admin")
     serials = getSerialNumbersByUid(current_user.uid)
     serials = [serial.serial_number for serial in serials]
@@ -150,12 +149,14 @@ def certificates():
     certs = certs if certs else []
     result = []
     for cert in certs:
-      c = crypto.load_certificate(crypto.FILETYPE_PEM, bytes.fromhex(cert))
-      result.append({
-        "serial": c.get_serial_number(),
-        "subject": c.get_subject().CN,
-      })
-   
+        c = crypto.load_certificate(crypto.FILETYPE_PEM, bytes.fromhex(cert))
+        result.append(
+            {
+                "serial": c.get_serial_number(),
+                "subject": c.get_subject().CN,
+            }
+        )
+
     return render_template("certificates.html", certs=result)
 
 
@@ -164,7 +165,9 @@ def certificates():
 def certificates_post():
     logging.info("Page: New Certificate, User: %s", current_user.uid)
     if current_user.is_admin():
-        logging.info("Page: New Certificate, Redirect to Admin, User: %s", current_user.uid)
+        logging.info(
+            "Page: New Certificate, Redirect to Admin, User: %s", current_user.uid
+        )
         return redirect("/admin")
     cert = getNewCertificate(
         current_user.uid,
@@ -175,12 +178,13 @@ def certificates_post():
 
     serial = cert["serial"]
     addCertificate(serial, current_user.uid)
-    
+
     cert = load_key_and_certificates(bytes.fromhex(cert["data"]), None)
-    print(cert)
-    
-    result = serialize_key_and_certificates(b"serial", cert[0], cert[1], None, NoEncryption())
-   
+
+    result = serialize_key_and_certificates(
+        b"serial", cert[0], cert[1], None, NoEncryption()
+    )
+
     if not os.path.exists("client_certs"):
         os.makedirs("client_certs")
 
@@ -200,12 +204,10 @@ def revoke():
     if current_user.is_admin():
         logging.info("Page: Revoke, Redirect to Admin, User: %s", current_user.uid)
         return redirect("/admin")
-    print(request.form)
     for _, serial in request.form.items():
         if current_user.uid == getUidBySerial(serial):
-            print(serial)
             if revokeCertificate(serial):
-              removeCertificate(serial)
+                removeCertificate(serial)
     return redirect("/certificates")
 
 

@@ -29,9 +29,8 @@ def verify_signature_eca():
         challenge = request.form.get("challenge")
         signature = request.form.get("signature")
         serial = request.form.get("serial")
-        print("SSSIG", signature)
         response = jsonify(
-            {"verified": eca.verifySignature(challenge, base64.b64decode(signature), serial)}
+            {"verified": eca.verifySignature(challenge, signature, serial)}
         )
         return make_response(response, 200)
     else:
@@ -78,7 +77,6 @@ def create_certificate():
 
 @app.route("/revoke_certificate", methods=["POST"])
 def revoke_cert():
-    print("REVOKE")
     if valid_request():
         serial = request.form.get("serialNumber")
         response = jsonify(
