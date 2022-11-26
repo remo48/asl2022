@@ -5,11 +5,9 @@ from config import CA_SERVER_IP, CA_SERVER_PORT, CA_CERT, SERVER_CERT, SERVER_KE
 
 def caPost(url, data=None):
     url = f"http://{CA_SERVER_IP}:{CA_SERVER_PORT}/{url}"
-    # return requests.psot(
-    #     url, data=data, verify=CA_CERT, cert=(SERVER_CERT, SERVER_KEY)
-    # ).json()
-    res = requests.post(url, data=data).json()
-    return res
+    return requests.psot(
+        url, data=data, verify=CA_CERT, cert=(SERVER_CERT, SERVER_KEY)
+    ).json()
 
 
 def verifyChallenge(challenge, signature, serial):

@@ -24,7 +24,7 @@ LOG_CONFIG = {
 }
 dictConfig(LOG_CONFIG)
 
-SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:secret@localhost:3306/imovies"
+SQLALCHEMY_DATABASE_URI = "mysql+pymysql://admin:admin@10.0.99.30:3306/imovies"
 # CA_SERVER_IP = "10.0.99.50"
 CA_SERVER_IP = "127.0.0.1"
 CA_SERVER_PORT = 5000
