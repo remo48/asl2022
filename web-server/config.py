@@ -23,4 +23,11 @@ LOG_CONFIG = {
     "root": {"level": "INFO", "handlers": ["wsgi"]},
 }
 dictConfig(LOG_CONFIG)
+
 SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:secret@localhost:3306/imovies"
+# CA_SERVER_IP = "10.0.99.50"
+CA_SERVER_IP = "127.0.0.1"
+CA_SERVER_PORT = 5000
+CA_CERT="/home/web-server/web-server/certs/ca.crt"
+SERVER_CERT="/home/web-server/web-server/certs/server.crt"
+SERVER_KEY="/home/web-server/web-server/certs/server.key"

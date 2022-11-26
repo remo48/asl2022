@@ -1,33 +1,48 @@
 import logging
+import requests
+from config import CA_SERVER_IP, CA_SERVER_PORT, CA_CERT, SERVER_CERT, SERVER_KEY
+
+
+def caPost(url, data=None):
+    url = f"http://{CA_SERVER_IP}:{CA_SERVER_PORT}/{url}"
+    # return requests.psot(
+    #     url, data=data, verify=CA_CERT, cert=(SERVER_CERT, SERVER_KEY)
+    # ).json()
+    res = requests.post(url, data=data).json()
+    return res
+
 
 def verifyChallenge(challenge, signature, serial):
-    print(challenge, signature, serial)
     logging.info("CA: Verify challenge, Serial: %s", serial)
-    return "ps@imovies.ch"
+    res = caPost(
+        "eca/verify_signature",
+        data={"challenge": challenge, "signature": signature, "serial": serial},
+    )
+    return res["verified"]
 
 
 def getCertificatesBySerialNumbers(serials):
     logging.info("CA: Get Certificates by Serial Numbers, Serials: %s", serials)
-    return [
-        {"serial": "1", "certificate": "-----BEGIN CERTIFICATE-----\r"},
-        {"serial": "2", "certificate": "-----BEGIN CERTIFICATE-----\r"},
-    ]
+    res = caPost("get_certificates_by_serial_numbers", data={"numbers": serials})
+    return res["certificates"]
 
 
 def revokeCertificate(serial):
     logging.info("CA: Revoke Certificate, Serial: %s", serial)
-    print("Revoked certificate with serial number: " + serial)
-    pass
+    res = caPost("revoke_certificate", data={"serialNumber": serial})
+    return res["status"]
 
 
 def getNewCertificate(uid, firstname, lastname, email):
     logging.info("CA: Get New Certificate, UID: %s", uid)
-    return {"serial": "01", "data": "-----BEGIN CERTIFICATE-----\r"}
+    res = caPost(
+        "create_certificate",
+        data={"firstName": firstname, "lastName": lastname, "email": email, "uid": uid},
+    )
+    return res["status"]
+
 
 def getAdminInfo():
     logging.info("CA: Get Admin Info")
-    return {
-      "num_certs": 2,
-      "num_revoked": 0,
-      "current_serial": 3,
-    }
+    res = caPost("adminInfo")
+    return res["status"]

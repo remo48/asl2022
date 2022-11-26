@@ -1,7 +1,11 @@
 import os
 import datetime
 from OpenSSL import crypto
-
+from cryptography.hazmat.primitives.serialization import load_der_parameters
+from cryptography.x509 import load_pem_x509_certificate
+import base64
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.hashes import SHA256
 class CA:
     def __init__(self, dir: str, name: str) -> None:
         """
@@ -69,6 +73,7 @@ class CA:
         location = os.path.join(self.crldir, self.name + "_crl.pem")
         self.write_crl(location, crl)
         self.crl = crl
+
 
     def get_key(self):
         """
@@ -157,8 +162,8 @@ class CA:
         """
         for file in os.listdir(self.certs):
             certificate = self.load_cert(os.path.join(self.certs, file))
-            if certificate.get_serial_number() == serialnr:
-                return certificate
+            if certificate.get_serial_number() == int(serialnr):
+                return crypto.dump_certificate(crypto.FILETYPE_PEM, certificate).hex()
         return None
 
     def create_key(self):
@@ -222,15 +227,24 @@ class InterCA(CA):
         """
         try:
             certificate = self.get_cert_by_serial_nr(serialnr)
-            crypto.verify(
-                cert = certificate,
-                signature = signature,
-                data = challenge,
-                digest = 'sha256'
-            )
+            signature = base64.b64decode(signature)
+            challenge = challenge.encode()
+            certificate = load_pem_x509_certificate(bytes.fromhex(certificate))
+            publickey = certificate.public_key()
+            publickey.verify(signature, challenge, padding.PKCS1v15(), SHA256())
             return True
-        except:
+        except Exception:
             return False
+
+    def is_revoked(self, serial_nr: int) -> bool:
+        """
+        Checks wheter a certificate with a given serial number has already been revoked
+        """
+        revoked_certs = self.crl.get_revoked()
+        for rvk in revoked_certs:
+            if rvk.get_serial() == str(serial_nr).encode():
+                return True
+        return False
 
     def getCertificatesBySerialNumbers(self, numbers) -> list:
         """
@@ -238,10 +252,11 @@ class InterCA(CA):
         """
         certificates = []
         for number in numbers:
-            certificates.append(self.get_cert_by_serial_nr(number))
+            if not self.is_revoked(number):
+                certificates.append(self.get_cert_by_serial_nr(number))
         return certificates
 
-    def create_certificate(self, name):
+    def create_certificate(self, firstName, lastName, email, uid):
         """
         Creates a certificate
         """
@@ -251,7 +266,7 @@ class InterCA(CA):
         issuer = self.certificate.get_subject()
 
         request = crypto.X509Req()
-        request.get_subject().CN = str(name)
+        request.get_subject().CN = f"{firstName} {lastName}, {email}, {uid}"
         request.get_subject().O = "iMovies"
         request.set_pubkey(key)
         request.sign(key, 'sha256')
@@ -265,15 +280,14 @@ class InterCA(CA):
         certificate.set_subject(request.get_subject())
         certificate.set_pubkey(key)
         certificate.sign(self.privatekey, 'sha256')
-
         pkc = crypto.PKCS12()
         pkc.set_ca_certificates([self.root.certificate, self.certificate])
         pkc.set_certificate(certificate)
         pkc.set_privatekey(key)
 
-        self.write_cert(os.path.join(self.certs, str(name)) + "_cert.pem", certificate)
-        self.write_key(os.path.join(self.keys, str(name)) + "_key.pem", key)
-        return pkc.export()
+        self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
+        self.write_key(os.path.join(self.keys, str(serialnr)) + "_key.pem", key)
+        return pkc.export(), serialnr
 
     def revoke_certificate(self, serialnr) -> bool:
         """
@@ -281,7 +295,7 @@ class InterCA(CA):
         """
         for file in os.listdir(self.certs):
             certificate = self.load_cert(file)
-            if certificate.get_serial_number() == serialnr:
+            if certificate.get_serial_number() == int(serialnr):
                 lastUpdate, nextUpdate = self.get_times()
                 revoke = crypto.Revoked()
                 revoke.set_serial(str(serialnr).encode())
@@ -296,7 +310,7 @@ class InterCA(CA):
         Returns basic admin info as specified in the project description
         """
         return {
-            'certificates': len([name for name in os.listdir(self.certs)]),
-            'revocations': len(self.crl.get_revoked()),
+            'certificates': len([name for name in os.listdir(self.certs)]) if self.certs else 0,
+            'revocations': len(self.crl.get_revoked()) if self.crl.get_revoked() else 0,
             "serial_nr": self.get_serial_number(0)
         }

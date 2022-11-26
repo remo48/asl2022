@@ -1,4 +1,4 @@
-<!-- https://stackoverflow.com/questions/36018233/how-to-load-a-pkcs12-digital-certificate-with-javascript-webcrypto-api -->
+
 
 {% extends "base_login.html" %} {% block login_content %}
 <label for="cert">Upload Certificate:</label>
@@ -13,17 +13,18 @@
       reader.onload = () => {
         var p12Der = arrayBufferToString(reader.result);
         var p12Asn1 = forge.asn1.fromDer(p12Der);
-        var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, "");
+        var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1);
         var bags = p12.getBags({ bagType: forge.pki.oids.certBag });
         var cert = bags[forge.pki.oids.certBag][0].cert;
-
         serial = cert.serialNumber;
 
         var keyBags = p12.getBags({
-          bagType: forge.pki.oids.pkcs8ShroudedKeyBag,
+          bagType: forge.pki.oids.keyBag,
         });
-        var keyBag = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag][0];
+        var keyBag = keyBags[forge.pki.oids.keyBag][0];
+
         privateKey = keyBag.key;
+
         resolve({
           key: privateKey,
           serial: serial,
@@ -39,6 +40,7 @@
     let file = document.getElementById("cert");
     submit_cert(file.files[0]);
   });
+  <!-- function from: https://stackoverflow.com/questions/36018233/how-to-load-a-pkcs12-digital-certificate-with-javascript-webcrypto-api -->
   function arrayBufferToString(buffer) {
     var binary = "";
     var bytes = new Uint8Array(buffer);
@@ -57,8 +59,7 @@
       console.log(e);
     }
     let privateKey = result.key;
-    let serial = result.serial;
-    console.log(serial);
+    let serial = parseInt(result.serial, 16);
     fetch("/get_challenge", {
       method: "POST",
       headers: {
@@ -70,8 +71,7 @@
         let challenge = data.challenge;
         var md = forge.md.sha256.create();
         md.update(challenge, "utf8");
-        var signature = result.key.sign(md);
-        console.log(signature);
+        var signature = result.key.sign(md, "RSASSA-PKCS1-V1_5");
         fetch("/solve_challenge", {
           method: "POST",
           headers: {
@@ -81,18 +81,19 @@
             signature: forge.util.encode64(signature),
             serial: serial,
           }),
-        }).then((response) => {
-          if (response.status == 200) {
-            console.log("REDI")
-            window.location.replace(response.url);
-          } else {
-            console.log("error");
-          }
-        });
+        })
+          .then((response) => {
+            return response.json();
+          })
+          .then((response) => {
+            if (response["verified"]) {
+              window.location.replace("/profile");
+            } else {
+              window.location.replace("/login_cert?error=True");
+            }
+          });
       });
     });
   }
 </script>
-{% endblock %} var challengeBuffer = new TextEncoder().encode(challenge); var
-signatureBase64 = forge.util.encode64(signature); request .post("/challenge", {
-signature: signatureBase64, }) .then((response) => { console.log(response); });
+{% endblock %}

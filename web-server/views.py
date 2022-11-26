@@ -1,5 +1,5 @@
 import os
-from flask import render_template, request, redirect, send_file
+from flask import render_template, request, redirect, send_file, jsonify
 import logging
 from flask.blueprints import Blueprint
 from flask_login import (
@@ -12,6 +12,13 @@ from flask_login import (
 from db_queries import *
 from ca_queries import *
 from utils import *
+from OpenSSL import crypto
+from cryptography.hazmat.primitives.serialization.pkcs12 import (
+    load_key_and_certificates,
+    serialize_key_and_certificates,
+)
+from cryptography.hazmat.primitives.serialization import NoEncryption
+
 
 web = Blueprint(
     "web",
@@ -45,6 +52,8 @@ def logout():
 @web.route("/login", methods=["POST"])
 def login_post():
     uid = request.form.get("uid")
+    if uid == "ad":
+        return render_template("login.html", error="Admin can only login in via certificate")
     logging.info("Page: Login, User: %s", uid)
     password = request.form.get("password")
     user = getUserByUid(uid)
@@ -85,25 +94,22 @@ def solve_challenge():
 
     if not challenge:
         logging.info("Page: Solve challenge, Serial: %s not found", serial)
-        return render_template("login_credentials.html", error="Invalid credentials")
+        return jsonify({"verified": False})
 
     if not verifyChallenge(challenge.challenge, signature, serial):
         logging.info("Page: Solve challenge, Serial: %s not verified", serial)
-        return render_template("login_credentials.html", error="Invalid credentials")
+        return jsonify({"verified": False})
 
     user_uid = getUidBySerial(serial)
     user = getUserByUid(user_uid)
 
     if not user:
         logging.info("Page: Solve challenge, User: %s not found", user_uid)
-        return render_template("login_credentials.html", error="Invalid credentials")
+        return jsonify({"verified": False})
 
     login_user(user)
     logging.info("Page: Login Successful, User: %s", user_uid)
-    if current_user.is_admin():
-        logging.info("Page: Login Successful, Redirect to Admin, User: %s", user_uid)
-        return redirect("/admin")
-    return redirect("/profile")
+    return jsonify({"verified": True})
 
 
 @web.route("/profile")
@@ -120,9 +126,6 @@ def profile():
 @fresh_login_required
 def profile_post():
     logging.info("Page: Profile, User: %s", current_user.uid)
-    if current_user.is_admin():
-        logging.info("Page: Profile, Redirect to Admin, User: %s", current_user.uid)
-        return redirect("/admin")
     last_name = request.form.get("lastname")
     first_name = request.form.get("firstname")
     email = request.form.get("email")
@@ -136,11 +139,25 @@ def profile_post():
 def certificates():
     logging.info("Page: Certificates, User: %s", current_user.uid)
     if current_user.is_admin():
-        logging.info("Page: Certificates, Redirect to Admin, User: %s", current_user.uid)
+        logging.info(
+            "Page: Certificates, Redirect to Admin, User: %s", current_user.uid
+        )
         return redirect("/admin")
     serials = getSerialNumbersByUid(current_user.uid)
+    serials = [serial.serial_number for serial in serials]
     certs = getCertificatesBySerialNumbers(serials)
-    return render_template("certificates.html", certs=certs)
+    certs = certs if certs else []
+    result = []
+    for cert in certs:
+        c = crypto.load_certificate(crypto.FILETYPE_PEM, bytes.fromhex(cert))
+        result.append(
+            {
+                "serial": c.get_serial_number(),
+                "subject": c.get_subject().CN,
+            }
+        )
+
+    return render_template("certificates.html", certs=result)
 
 
 @web.route("/certificates", methods=["POST"])
@@ -148,7 +165,9 @@ def certificates():
 def certificates_post():
     logging.info("Page: New Certificate, User: %s", current_user.uid)
     if current_user.is_admin():
-        logging.info("Page: New Certificate, Redirect to Admin, User: %s", current_user.uid)
+        logging.info(
+            "Page: New Certificate, Redirect to Admin, User: %s", current_user.uid
+        )
         return redirect("/admin")
     cert = getNewCertificate(
         current_user.uid,
@@ -160,14 +179,18 @@ def certificates_post():
     serial = cert["serial"]
     addCertificate(serial, current_user.uid)
 
-    data = cert["data"]
+    cert = load_key_and_certificates(bytes.fromhex(cert["data"]), None)
+
+    result = serialize_key_and_certificates(
+        b"serial", cert[0], cert[1], None, NoEncryption()
+    )
 
     if not os.path.exists("client_certs"):
         os.makedirs("client_certs")
 
     filename = f"client_certs/{serial}.p12"
     with open(filename, "wb") as f:
-        f.write(data.encode("utf-8"))
+        f.write(result)
 
     new_cert = send_file(filename, as_attachment=True)
     os.remove(filename)
@@ -183,8 +206,8 @@ def revoke():
         return redirect("/admin")
     for _, serial in request.form.items():
         if current_user.uid == getUidBySerial(serial):
-            revokeCertificate(serial)
-            removeCertificate(serial)
+            if revokeCertificate(serial):
+                removeCertificate(serial)
     return redirect("/certificates")
 
 

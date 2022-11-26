@@ -17,7 +17,10 @@ class User(db.Model, UserMixin):
         return self.uid
 
     def is_admin(self):
-        return self.uid == "ps"
+        return False
+
+    def is_admin(self):
+        return self.uid == "ad"
 
 
 class Challenge(db.Model):
