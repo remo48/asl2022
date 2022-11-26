@@ -2,6 +2,7 @@
 .vagrant/
 web-server/venv
 web-server/.env
+ca/venv
 web-server/web-server.log
 keys/
 .idea/
