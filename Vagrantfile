@@ -7,6 +7,7 @@ CPU_CAP_PERCENTAGE=50
 INTERNAL_NETWORK="asl-internal"
 PUBLIC_NETWORK="asl-public"
 
+ANSIBLE_REMOTE_PASSWORD="ansible123"
 
 # definition of machines 
 # IMPORTANT: if something is changed here, inventory must be 
@@ -38,13 +39,39 @@ hosts = {
   }
 }
 
+$add_ssh_keys = <<-SCRIPT
+# add ip addresses to host file
+echo "$2 $1" | sudo tee -a /etc/hosts
+
+# copy public key to authorized_keys on host machines
+sudo sshpass -p "#{ANSIBLE_REMOTE_PASSWORD}" ssh-copy-id -i /home/ansible/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new ansible@$1
+
+# add remote host to known_hosts of ansible
+sudo su - ansible -c 'ssh -o StrictHostKeyChecking=accept-new ansible@$1 exit'
+
+# remove password from ansible remote user
+sudo sshpass -p "#{ANSIBLE_REMOTE_PASSWORD}" ssh ansible@$1 <<EOF
+sudo passwd -d ansible
+sudo usermod --lock ansible
+EOF
+SCRIPT
+
+$add_remote_ansible_user = <<-SCRIPT
+# configure sshd
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config    
+systemctl restart sshd.service
+
+# add ansible user
+sudo adduser --disabled-password --gecos "" ansible
+echo "ansible:#{ANSIBLE_REMOTE_PASSWORD}" | sudo chpasswd
+echo "ansible ALL=(ALL) NOPASSWD: ALL" | sudo EDITOR="tee -a" visudo
+SCRIPT
+
 Vagrant.configure("2") do |config|
 
   config.vm.provider "virtualbox" do |vb|
 		vb.customize ["modifyvm", :id, "--cpuexecutioncap", CPU_CAP_PERCENTAGE]
 	end
-
-  config.vm.synced_folder ".", "/vagrant", mount_options: ["dmode=775,fmode=664"]
 
   # set up internal hosts
   hosts.each do |hostname, info|
@@ -63,6 +90,8 @@ Vagrant.configure("2") do |config|
         vb.name = "asl-#{hostname}"
         vb.memory = MEMORY
       end
+
+      hostconf.vm.provision "shell", inline: $add_remote_ansible_user
 
       # add host names to /etc/hosts
       hosts.each do |peer_hostname, peer_info|
@@ -88,6 +117,8 @@ Vagrant.configure("2") do |config|
       vb.memory = CLIENT_MEMORY
     end
 
+    clientconf.vm.provision "shell", inline: $add_remote_ansible_user
+
     # add hosts with public ip to /etc/hosts
     hosts.each do |peer_hostname, peer_info|
       if peer_info.key?(:pub_ip)
@@ -110,21 +141,36 @@ Vagrant.configure("2") do |config|
       vb.memory = MEMORY
     end
 
-    
+    configconf.vm.provision "shell", inline: <<-SCRIPT
+      # install ansible
+      sudo apt-get update
+      sudo apt-get install -y ansible sshpass
+
+      # add ansible user
+      sudo adduser --disabled-password --gecos "" ansible
+      echo "ansible ALL=(ALL) NOPASSWD: ALL" | sudo EDITOR="tee -a" visudo
+
+      # generate private key for ansible user
+      sudo su - ansible -c 'ssh-keygen -t ed25519 -f /home/ansible/.ssh/id_ed25519 -N ""'
+
+      # copy ansible playbooks and inventory
+      sudo cp -r /vagrant/shared/ansible /home/ansible
+    SCRIPT
 
     hosts.each do |peer_hostname, peer_info|
-      configconf.vm.provision "shell", inline: <<-SCRIPT
-        echo "#{peer_info[:ip]} #{peer_hostname}" | sudo tee -a /etc/hosts
-      SCRIPT
+      # add ssh acces for ansible user
+      configconf.vm.provision "shell", inline: $add_ssh_keys, args: [peer_hostname, peer_info[:ip]]
     end
 
+    configconf.vm.provision "shell", inline: $add_ssh_keys, args: [clientvm[:name], clientvm[:pub_ip]]
+
     # provision machines with config as master
-    configconf.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "site.yml"
-      ansible.limit = "all"
-      ansible.install = true
-      ansible.inventory_path = "production"
-      ansible.provisioning_path = "/vagrant/shared/ansible"
-    end
+    # configconf.vm.provision "ansible_local" do |ansible|
+    #   ansible.playbook = "site.yml"
+    #   ansible.limit = "all"
+    #   ansible.install = true
+    #   ansible.inventory_path = "production"
+    #   ansible.provisioning_path = "/vagrant/shared/ansible"
+    # end
   end
 end
