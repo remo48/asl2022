@@ -45,17 +45,21 @@ class CA:
         Writes down the serialnr of the issued certificate and its state ('V': valid)
         """
         with open(self.index, 'a') as index:
-            index.write(f"{serialnr} V")
+            index.write(f"{serialnr} Valid \n")
 
     def revoke_index(self, serialnr):
         """
         Writes a 'R' (revoked) to the line with the matching serialnr
         """
-        file = open(self.index, 'r')
-        for line in file:
-            line = line.strip()
-            if(line == f"{serialnr} V"):
-                line.replace(f"{serialnr} V", f"{serialnr} R")
+        with open(self.index, 'r') as file:
+            data = file.readlines()
+            for i, line in enumerate(data):
+                if f"{serialnr} Valid \n" in line:
+                    data[i] = f"{serialnr} Revoked \n"
+                    with open(self.index, 'w') as file:
+                        file.writelines(data)
+                        return
+        raise Exception("Could not revoke index!")
 
     def update_crl(self, revoke:crypto.Revoked, lastUpdate, nextUpdate):
         """
@@ -113,6 +117,7 @@ class CA:
             certificate.set_pubkey(self.root.privatekey)
             certificate.sign(self.root.privatekey, 'sha256')
             self.write_cert(location, certificate)
+            self.write_index(serialnr)
         return certificate
 
     def get_crl(self):
@@ -287,8 +292,12 @@ class InterCA(CA):
         pkc.set_certificate(certificate)
         pkc.set_privatekey(key)
 
-        self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
-        self.write_key(os.path.join(self.keys, str(serialnr)) + "_key.pem", key)
+        if self.name == "ica":
+            self.write_cert(os.path.join(self.certs, f"{firstName}") + "_cert.pem", certificate)
+            self.write_key(os.path.join(self.keys, firstName) + "_key.pem", key)
+        else:
+            self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
+            self.write_key(os.path.join(self.keys, str(serialnr)) + "_key.pem", key)
         self.write_index(serialnr)
         return pkc.export(), serialnr
 
