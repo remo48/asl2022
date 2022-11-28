@@ -8,3 +8,4 @@ ica = InterCA(root, "ica")
 eca = InterCA(root, "eca")
 
 ica.create_certificate("web", "server", "webserver@imovies.ch", 1)
+#ica.revoke_certificate(2)

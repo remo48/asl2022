@@ -38,6 +38,8 @@ class CA:
                 f = open(newDir, "w")
                 if name == "serial":
                     f.write(str(1))
+                if name == "index.txt":
+                    f.write("serialnr, status, time \n")
         return newDir
 
     def write_index(self, serialnr):
@@ -45,7 +47,7 @@ class CA:
         Writes down the serialnr of the issued certificate and its state ('V': valid)
         """
         with open(self.index, 'a') as index:
-            index.write(f"{serialnr} Valid \n")
+            index.write(f"{serialnr}, Valid, {datetime.datetime.now()}\n")
 
     def revoke_index(self, serialnr):
         """
@@ -54,8 +56,9 @@ class CA:
         with open(self.index, 'r') as file:
             data = file.readlines()
             for i, line in enumerate(data):
-                if f"{serialnr} Valid \n" in line:
-                    data[i] = f"{serialnr} Revoked \n"
+                print(line)
+                if f"{serialnr}, Valid" in line:
+                    data[i] = f"{serialnr}, Revoked, {datetime.datetime.now()}\n"
                     with open(self.index, 'w') as file:
                         file.writelines(data)
                         return
