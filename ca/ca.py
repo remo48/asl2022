@@ -110,8 +110,8 @@ class CA:
             certificate.gmtime_adj_notBefore(0)
             certificate.gmtime_adj_notAfter(31536000)
             certificate.set_serial_number(serialnr)
-            certificate.set_pubkey(self.privatekey)
-            certificate.sign(self.privatekey, 'sha256')
+            certificate.set_pubkey(self.root.privatekey)
+            certificate.sign(self.root.privatekey, 'sha256')
             self.write_cert(location, certificate)
         return certificate
 
@@ -228,25 +228,11 @@ class InterCA(CA):
         """
         try:
             certificate = self.get_cert_by_serial_nr(serialnr)
-
-            store = crypto.X509Store()
-            store.add_cert(self.root.certificate)
-            store.add_crl(self.root.crl)
-            store.set_flags(crypto.X509StoreFlags.CRL_CHECK_ALL)
-
-            store.add_cert(self.certificate)
-            store.add_crl(self.crl)
-            store.set_flags(crypto.X509StoreFlags.CRL_CHECK)
-
-            context = crypto.X509StoreContext(store, certificate)
-            context.verify_certificate()
-            
-            # certificate = self.get_cert_by_serial_nr(serialnr)
-            # signature = base64.b64decode(signature)
-            # challenge = challenge.encode()
-            # certificate = load_pem_x509_certificate(bytes.fromhex(certificate))
-            # publickey = certificate.public_key()
-            # publickey.verify(signature, challenge, padding.PKCS1v15(), SHA256())
+            signature = base64.b64decode(signature)
+            challenge = challenge.encode()
+            certificate = load_pem_x509_certificate(bytes.fromhex(certificate))
+            publickey = certificate.public_key()
+            publickey.verify(signature, challenge, padding.PKCS1v15(), SHA256())
             return True
         except Exception:
             return False
