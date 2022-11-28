@@ -266,7 +266,7 @@ class InterCA(CA):
         issuer = self.certificate.get_subject()
 
         request = crypto.X509Req()
-        request.get_subject().CN = f"{firstName} {lastName}, {email}, {uid}"
+        request.get_subject().CN = self.name
         request.get_subject().O = "iMovies"
         request.set_pubkey(key)
         request.sign(key, 'sha256')
@@ -280,6 +280,7 @@ class InterCA(CA):
         certificate.set_subject(request.get_subject())
         certificate.set_pubkey(key)
         certificate.sign(self.privatekey, 'sha256')
+
         pkc = crypto.PKCS12()
         pkc.set_ca_certificates([self.root.certificate, self.certificate])
         pkc.set_certificate(certificate)

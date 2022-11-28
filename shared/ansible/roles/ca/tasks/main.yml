@@ -1,17 +1,14 @@
 - name: Copy ca
   copy:
     src: /vagrant/ca
-    dest: /home/{{ username }}/ca
+    dest: /home/{{ username }}/
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: 0770
 
 - name: Install pip packages
   pip:
-    name: 
-      - wheel
-      - gunicorn
-      - flask
+    requirements: /home/{{ username }}/ca/requirements.txt
 
 - name: Create service
   template:
