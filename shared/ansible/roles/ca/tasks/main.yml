@@ -10,7 +10,7 @@
   pip:
     requirements: /home/{{ username }}/ca/requirements.txt
 
-- name: Create service
+- name: Create caserver service
   template:
     src: caserver.service.j2
     dest: /etc/systemd/system/caserver.service
@@ -22,7 +22,7 @@
   systemd: 
     daemon_reload: yes
 
-- name: Start service
+- name: Start caserver service
   systemd:
     name: caserver
     enabled: yes

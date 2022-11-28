@@ -1,4 +1,9 @@
 ---
-db_user: admin
-db_pass: admin
-db_name: imovies
+mysql_root_password: "sC7*4dr6!QcJ"
+mysql_databases:
+  - name: "{{ db_name }}"
+mysql_users:
+  - name: "{{ db_user }}"
+    host: "%"
+    password: "{{ db_pass }}"
+    priv: "*.*:ALL"

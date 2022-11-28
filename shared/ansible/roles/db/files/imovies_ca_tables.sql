@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `challenge`;
 
 CREATE TABLE `challenge` (
   `id` INTEGER NOT NULL AUTO_INCREMENT,
@@ -6,7 +7,7 @@ CREATE TABLE `challenge` (
   PRIMARY KEY (`id`)
 );
 
-
+DROP TABLE IF EXISTS `certificate`;
 
 CREATE TABLE `certificate` (
   `id` INTEGER NOT NULL AUTO_INCREMENT,

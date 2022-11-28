@@ -1,0 +1,3 @@
+---
+- src: geerlingguy.mysql
+  version: 4.2.1

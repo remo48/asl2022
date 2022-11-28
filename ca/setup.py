@@ -7,5 +7,5 @@ root = RootCA()
 ica = InterCA(root, "ica")
 eca = InterCA(root, "eca")
 
-ica.create_certificate("web", "server", "webserver@imovies.ch", 1)
+ica.create_certificate("db", "server", "dbserver@imovies.ch", 1)
 #ica.revoke_certificate(2)
