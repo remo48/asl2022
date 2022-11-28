@@ -1,14 +1,33 @@
-- name: Install required packages
-  apt: 
-    name: "{{item}}"
-    state: present
-  with_items:
-    - python3-pip
+- name: Copy ca
+  copy:
+    src: /vagrant/ca
+    dest: /home/{{ username }}/ca
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0770
 
 - name: Install pip packages
   pip:
-    name: "{{item}}"
-  with_items:
-    - wheel
-    - gunicorn
-    - flask
+    name: 
+      - wheel
+      - gunicorn
+      - flask
+
+- name: Create service
+  template:
+    src: caserver.service.j2
+    dest: /etc/systemd/system/caserver.service
+    owner: root
+    group: root
+    mode: 0644
+  
+- name: Reload systemd
+  systemd: 
+    daemon_reload: yes
+
+- name: Start service
+  systemd:
+    name: caserver
+    enabled: yes
+    state: started
+

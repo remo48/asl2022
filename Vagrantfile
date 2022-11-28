@@ -108,9 +108,6 @@ Vagrant.configure("2") do |config|
     clientconf.vm.hostname = clientvm[:name]
     clientconf.vm.network "private_network", ip: "#{clientvm[:pub_ip]}", virtualbox__intnet: PUBLIC_NETWORK
 
-    # disable synced folder
-    clientconf.vm.synced_folder ".", "/vagrant", disabled: true
-
     # configure virtualbox
     clientconf.vm.provider "virtualbox" do |vb|
       vb.name = "asl-#{clientvm[:name]}"
@@ -118,6 +115,11 @@ Vagrant.configure("2") do |config|
     end
 
     clientconf.vm.provision "shell", inline: $add_remote_ansible_user
+
+    # add client to /etc/hosts
+    clientconf.vm.provision "shell", inline: <<-SCRIPT
+      echo "#{configvm[:pub_ip]} #{configvm[:name]}" | sudo tee -a /etc/hosts
+    SCRIPT
 
     # add hosts with public ip to /etc/hosts
     hosts.each do |peer_hostname, peer_info|

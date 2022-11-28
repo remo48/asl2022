@@ -1,4 +1,7 @@
 ---
+username: web-server
+usershell: /sbin/nologin
+
 nftables_config_input_rules:
     - tcp dport https accept
 

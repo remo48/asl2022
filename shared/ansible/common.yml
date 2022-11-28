@@ -4,23 +4,27 @@
   tasks:
     - name: Update and upgrade apt packages
       apt:
-        upgrade: yes
+        upgrade: "yes"
         update_cache: yes
+
+- hosts: dbservers, webservers, caservers
+  become: yes
+  tasks:
+    - name: Install Python pip
+      apt: 
+        name: python3-pip 
+        update_cache: true 
+        state: present 
+        force_apt_get: yes
 
 - hosts: dbservers, webservers
   become: yes
   tasks:
-    - name: Install vim
-      apt: name=vim update_cache=true state=present
-
-    - name: Install Python pip
-      apt: name=python3-pip update_cache=true state=present force_apt_get=yes
-
     - name: Install Python packages
       pip: 
         name: mysql-connector-python
         
-- hosts: dbservers, webservers, caservers, backupservers
+- hosts: webservers, caservers
   become: yes
   tasks:
     - name: Add users
@@ -28,4 +32,3 @@
         name: "{{ username }}"
         password_lock: yes
         shell: "{{ usershell }}"
-        append: yes

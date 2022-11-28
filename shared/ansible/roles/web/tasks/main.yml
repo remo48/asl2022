@@ -1,18 +1,14 @@
-- name: Add user "web-server"
-  user:
-    name: web-server
-
 - name: copy web-server
   copy: 
-    src: ../../../../../web-server/
-    dest: /home/web-server/web-server 
-    owner: web-server 
-    group: web-server
+    src: /vagrant/web-server
+    dest: /home/{{ username }}/ 
+    owner: "{{ username }}"
+    group: "{{ username }}"
     mode: u=rwx
 
 - name: Install specified python requirements
-  ansible.builtin.pip:
-    requirements: /home/web-server/web-server/requirements.txt
+  pip:
+    requirements: /home/{{ username }}/web-server/requirements.txt
 
 - name: install setfacl
   apt:
@@ -21,9 +17,10 @@
 
 - name: create log file
   file:
-    path: /home/web-server/web-server/web-server.log
-    owner: web-server
-    group: web-server
+    path: /home/{{ username }}/web-server/web-server.log
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    state: touch
     attributes: +a
     mode: u=rw
 
@@ -31,12 +28,22 @@
 # - name: Copy certificates for ca, db for server authentication
 # - name: Copy certificates, key for internal tls connections, client authentication
 
-- name: move service into /etc
-  command: mv /home/web-server/web-server/web-server.service /etc/systemd/system
+- name: Create service
+  template:
+    src: webserver.service.j2
+    dest: /etc/systemd/system/webserver.service
+    owner: root
+    group: root
+    mode: 0644
+  
+- name: Reload systemd
+  systemd: 
+    daemon_reload: yes
 
-- name: start web server service
-  command: sudo systemctl start web-server
-  become: yes
-  become_user: web-server
+- name: Start service
+  systemd:
+    name: webserver
+    enabled: yes
+    state: started
 
 

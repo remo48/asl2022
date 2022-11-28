@@ -7,3 +7,4 @@ web-server/web-server.log
 keys/
 .idea/
 __pycache__/
+shared/keystore

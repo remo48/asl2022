@@ -1,0 +1,10 @@
+[Unit]
+Description=CA Server
+
+[Service]
+User={{ username }}
+WorkingDirectory=/home/{{ username }}/ca
+ExecStart=gunicorn api:app
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,16 @@
 ---
 - hosts: clientservers
+  become: true
+  tasks:
+    - name: Create client user
+      user:
+        name: alice
+        state: present
+        shell: /bin/bash
+        password: "{{ client_password | password_hash('sha512') }}"
+
+
+- hosts: clientservers
   become: yes
-  become_method: sudo
   roles:
     - xfce-desktop
