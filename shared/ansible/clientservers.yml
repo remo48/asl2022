@@ -9,8 +9,15 @@
         shell: /bin/bash
         password: "{{ client_password | password_hash('sha512') }}"
 
-
 - hosts: clientservers
   become: yes
   roles:
     - xfce-desktop
+
+- hosts: clientservers
+  become: yes
+  tasks:
+    - name: Install firefox
+      apt:
+        name: firefox-esr
+        state: present

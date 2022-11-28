@@ -4,7 +4,7 @@ Description=CA Server
 [Service]
 User={{ username }}
 WorkingDirectory=/home/{{ username }}/ca
-ExecStart=gunicorn api:app
+ExecStart=gunicorn wsgi:app
 
 [Install]
 WantedBy=multi-user.target
