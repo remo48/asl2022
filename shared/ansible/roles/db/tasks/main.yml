@@ -2,50 +2,80 @@
   apt:
     deb: https://dev.mysql.com/get/mysql-apt-config_0.8.24-1_all.deb
     state: present
-- name: Installing Mysql  and dependencies
+  become: yes
+- name: Update apt
+  package:
+   update_cache: yes
+  become: yes
+- name: Installing Mysql and dependencies
   package:
    name: "{{item}}"
    state: present
-   update_cache: yes
   loop:
    - mysql-server
    - mysql-client
    - python3-mysqldb
    - libmysqlclient-dev
   become: yes
+- name: Recursively change ownership of a directory
+  file:
+    path: "{{ item }}"
+    owner: mysql
+    group: mysql
+  loop:
+    - /usr/bin/mysql
+    - /usr/bin/mysqldump
+    - /usr/bin/mysqladmin
+    - /usr/bin/mysqlimport
+    - /usr/bin/mysql_config
+  become: yes
+- name: Recursively change ownership of a directory
+  file:
+    path: "{{ item }}"
+    owner: mysql
+    group: mysql
+    recurse: yes
+  loop:
+    - /var/lib/mysql
+    - /etc/mysql
+  become: yes
 - name: start and enable mysql service
   service:
     name: mysql
     state: started
     enabled: yes
-- name: creating mysql user (medium_post)
+  become: yes
+- name: creating mysql user
   mysql_user:
     name: "{{db_user}}"
     password: "{{db_pass}}"
     priv: '*.*:ALL'
     host: '%'
     state: present
+  become: yes
 - name: creating imovies
   mysql_db:
     name: "{{db_name}}"
     state: present
+  become: yes
 - name: copy imovies_users dump
-  copy: src=../files/imovies_users.sql dest=/var/tmp/imovies_users.sql owner=root group=root mode=0600
+  copy: src=../files/imovies_users.sql dest=/var/tmp/imovies_users.sql owner=mysql group=mysql mode=0600
+  become: yes
 - name: import imovies_users db
   mysql_db: name=imovies state=import target=/var/tmp/imovies_users.sql
+  become: yes
 - name: copy imovies_ca tables
-  copy: src=../files/imovies_ca_tables.sql dest=/var/tmp/imovies_ca_tables.sql owner=root group=root mode=0600
+  copy: src=../files/imovies_ca_tables.sql dest=/var/tmp/imovies_ca_tables.sql owner=mysql group=mysql mode=0600
+  become: yes
 - name: import imovies_ca tables
   mysql_db: name=imovies state=import target=/var/tmp/imovies_ca_tables.sql
+  become: yes
 - name: Enable remote login to mysql
   lineinfile:
      path: /etc/mysql/mysql.conf.d/mysqld.cnf
      regexp: '^bind-address'
      line: 'bind-address = 0.0.0.0'
-     backup: yes
-  notify:
-     - Restart mysql
-
+  become: yes
 
 - name: Enable TLS connection to mysql
   lineinfile:
@@ -56,6 +86,6 @@
     - 'ssl_cert=/var/lib/mysql/server-cert.pem'
     - 'ssl_key=/var/lib/mysql/server-key.pem'
     - 'require_secure_transport=ON'
-  become: true
+  become: yes
   notify:
      - Restart mysql

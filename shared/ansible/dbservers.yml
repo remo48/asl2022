@@ -1,5 +1,13 @@
+- name: setup Mysql create user
+  hosts: db
+  tasks:
+    - name: Add user mysql
+      user:
+        name: mysql
+      become: yes
+
 - name: setup Mysql
-  become: yes
+#  become: yes
   hosts: db
   roles:
     - db
