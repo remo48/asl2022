@@ -6,12 +6,13 @@ from cryptography.x509 import load_pem_x509_certificate
 import base64
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.hashes import SHA256
+
 class CA:
     def __init__(self, dir: str, name: str) -> None:
         """
         Creates a ca interface with important functionalities
 
-        :param dir: The directory of the ca. For the root CA it should be "/ca" and for intermediate cas it should be "/ca/inter_ca"
+        :param dir: The directory of the ca. For the root CA it should be "/ca" and for intermediate ca's it should be "/ca/inter_ca"
 
         :param name: The name of the CA. In our case one of the following: "root", "eca", "ica"
         """
@@ -227,11 +228,25 @@ class InterCA(CA):
         """
         try:
             certificate = self.get_cert_by_serial_nr(serialnr)
-            signature = base64.b64decode(signature)
-            challenge = challenge.encode()
-            certificate = load_pem_x509_certificate(bytes.fromhex(certificate))
-            publickey = certificate.public_key()
-            publickey.verify(signature, challenge, padding.PKCS1v15(), SHA256())
+
+            store = crypto.X509Store()
+            store.add_cert(self.root.certificate)
+            store.add_crl(self.root.crl)
+            store.set_flags(crypto.X509StoreFlags.CRL_CHECK_ALL)
+
+            store.add_cert(self.certificate)
+            store.add_crl(self.crl)
+            store.set_flags(crypto.X509StoreFlags.CRL_CHECK)
+
+            context = crypto.X509StoreContext(store, certificate)
+            context.verify_certificate()
+            
+            # certificate = self.get_cert_by_serial_nr(serialnr)
+            # signature = base64.b64decode(signature)
+            # challenge = challenge.encode()
+            # certificate = load_pem_x509_certificate(bytes.fromhex(certificate))
+            # publickey = certificate.public_key()
+            # publickey.verify(signature, challenge, padding.PKCS1v15(), SHA256())
             return True
         except Exception:
             return False
@@ -288,6 +303,7 @@ class InterCA(CA):
 
         self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
         self.write_key(os.path.join(self.keys, str(serialnr)) + "_key.pem", key)
+        self.write_index(serialnr)
         return pkc.export(), serialnr
 
     def revoke_certificate(self, serialnr) -> bool:
