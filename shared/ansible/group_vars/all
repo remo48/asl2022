@@ -1,5 +1,9 @@
 ---
 nftables_internal_network: 10.0.99.1/24
 
+db_user: admin
+db_pass: admin
+db_name: imovies
+
 admin_password: admin123
 client_password: alice123

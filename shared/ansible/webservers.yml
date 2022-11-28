@@ -3,3 +3,12 @@
   hosts: webservers
   roles:
     - web
+    - nginx
+  vars:
+    site_name: imovies.ch
+    site_port: 443
+    certfile: web_cert.pem
+    privkey: web_key.pem
+    working_dir: /home/{{ username }}/web-server
+    sock_name: webserver.sock
+    

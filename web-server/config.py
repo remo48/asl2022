@@ -24,10 +24,8 @@ LOG_CONFIG = {
 }
 dictConfig(LOG_CONFIG)
 
-SQLALCHEMY_DATABASE_URI = "mysql+pymysql://admin:admin@10.0.99.30:3306/imovies"
-CA_SERVER_IP = "10.0.99.50"
-CA_SERVER_IP = "127.0.0.1"
-CA_SERVER_PORT = 5000
-CA_CERT="/home/web-server/web-server/certs/ca.crt"
-SERVER_CERT="/home/web-server/web-server/certs/server.crt"
-SERVER_KEY="/home/web-server/web-server/certs/server.key"
+SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URI")
+CORE_CA_URL = os.getenv("CORE_CA_URL")
+CA_CERT= os.getenv("ROOT_CERT")
+SERVER_CERT= os.getenv("SERVER_CERT")
+SERVER_KEY= os.getenv("SERVER_KEY")

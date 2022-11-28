@@ -1,0 +1,14 @@
+server {
+    listen {{ site_port }} ssl;
+    server_name .{{ site_name }};
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_certificate /etc/asl/certs/{{ certfile }};
+    ssl_certificate_key /etc/asl/certs/{{ privkey }};
+
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:{{ working_dir }}/{{ sock_name }};
+    }
+}

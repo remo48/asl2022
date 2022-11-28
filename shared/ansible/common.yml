@@ -32,3 +32,25 @@
         name: "{{ username }}"
         password_lock: yes
         shell: "{{ usershell }}"
+
+- hosts: webservers
+  become: yes
+  tasks:
+    - name: Create tls folder
+      file:
+        path: /etc/asl/certs
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Copy key and certificate
+      copy:
+        src: /vagrant/ca/ica/{{ item }}s/{{ ansible_host }}_{{ item }}.pem
+        dest: /etc/asl/certs/{{ ansible_host }}_{{ item }}.pem
+        owner: root
+        group: root
+        mode: 0644
+      with_items:
+        - key
+        - cert

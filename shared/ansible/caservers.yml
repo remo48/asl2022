@@ -2,3 +2,11 @@
   become: yes
   roles:
     - ca
+    - nginx
+  vars:
+    site_name: ca
+    site_port: 443
+    certfile: ca_cert.pem
+    privkey: ca_key.pem
+    working_dir: /home/{{ username }}/ca
+    sock_name: caserver.sock

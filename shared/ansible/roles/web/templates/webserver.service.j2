@@ -4,9 +4,10 @@ After=network.target
 
 [Service]
 User={{ username }}
+Group=www-data
 WorkingDirectory=/home/{{ username }}/web-server
 # ExecStart=gunicorn --bind imovies.ch:5000 --certfile=/home/web-server/web-server/certs/tls_cert.pem --keyfile=/home/web-server/web-server/certs/tls-key.pem
-ExecStart=gunicorn wsgi:app
+ExecStart=/usr/local/bin/gunicorn --workers 3 --bind unix:{{ sock_name }} -m 007 wsgi:app
 EnvironmentFile=/etc/systemd/system/webserver.env
 
 [Install]

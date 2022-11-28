@@ -1,10 +1,11 @@
+import os
 import logging
 import requests
-from config import CA_SERVER_IP, CA_SERVER_PORT, CA_CERT, SERVER_CERT, SERVER_KEY
+from config import CORE_CA_URL, CA_CERT, SERVER_CERT, SERVER_KEY
 
 
 def caPost(url, data=None):
-    url = f"http://{CA_SERVER_IP}:{CA_SERVER_PORT}/{url}"
+    url = os.path.join(CORE_CA_URL, url)
     return requests.psot(
         url, data=data, verify=CA_CERT, cert=(SERVER_CERT, SERVER_KEY)
     ).json()

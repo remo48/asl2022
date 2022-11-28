@@ -1,0 +1,9 @@
+---
+site_name: example.com
+site_port: 443
+
+certfile: tls_cert.pem
+privkey: tls_key.pem
+
+working_dir:
+sock_name: default.sock

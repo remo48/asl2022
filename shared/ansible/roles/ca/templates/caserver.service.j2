@@ -1,10 +1,12 @@
 [Unit]
 Description=CA Server
+After=network.target
 
 [Service]
 User={{ username }}
+Group=www-data
 WorkingDirectory=/home/{{ username }}/ca
-ExecStart=gunicorn wsgi:app
+ExecStart=gunicorn --workers 3 --bind unix:{{ sock_name }} -m 007 wsgi:app
 
 [Install]
 WantedBy=multi-user.target

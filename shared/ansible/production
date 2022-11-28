@@ -1,22 +1,22 @@
 [dbservers]
-db
+db      ansible_host=db
 [webservers]
-web
+web     ansible_host=web
 
 [configservers]
 config  ansible_connection=local
 
 [clientservers]
-client
+client  ansible_host=client
 
 [backupservers]
-backup
+backup  ansible_host=backup
 
 [caservers]
-ca
+ca      ansible_host=ca
 
 [backupclients]
 config  ansible_connection=local
-ca
-db
+ca      ansible_host=ca
+db      ansible_host=db
 
