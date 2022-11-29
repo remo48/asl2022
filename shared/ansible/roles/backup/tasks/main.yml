@@ -1,3 +1,6 @@
+- name: Import mysql-client
+  import_tasks: mysql-client.yml
+
 - name: copy backup script
   copy: src=../files/{{ item }} dest=/home/backup/ owner=backup group=backup mode=0770
   loop:

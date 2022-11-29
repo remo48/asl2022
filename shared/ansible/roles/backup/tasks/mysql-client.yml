@@ -1,0 +1,26 @@
+- name: Download Mysql
+  apt:
+    deb: https://dev.mysql.com/get/mysql-apt-config_0.8.24-1_all.deb
+    state: present
+  become: yes
+- name: Installing Mysql and dependencies
+  package:
+   name: "{{item}}"
+   state: present
+   update_cache: yes
+  loop:
+   - mysql-client
+   - python3-mysqldb
+   - libmysqlclient-dev
+  become: yes
+
+
+- name: store username and password for mysqldump in my.cnf
+  lineinfile:
+     path: /etc/mysql/my.cnf
+     line: "{{ item }}"
+  with_items:
+    - '[mysqldump]'
+    - 'user={{db_user}}'
+    - 'password={{db_pass}}'
+  become: yes
