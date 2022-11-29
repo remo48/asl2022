@@ -24,10 +24,6 @@
     attributes: +a
     mode: u=rw
 
-# - name: Copy certificates for tls public connections
-# - name: Copy certificates for ca, db for server authentication
-# - name: Copy certificates, key for internal tls connections, client authentication
-
 - name: Create environment file
   template:
     src: webserver.env.j2

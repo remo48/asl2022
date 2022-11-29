@@ -6,7 +6,7 @@ from config import CORE_CA_URL, CA_CERT, SERVER_CERT, SERVER_KEY
 
 def caPost(url, data=None):
     url = os.path.join(CORE_CA_URL, url)
-    return requests.psot(
+    return requests.post(
         url, data=data, verify=CA_CERT, cert=(SERVER_CERT, SERVER_KEY)
     ).json()
 

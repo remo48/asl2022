@@ -34,6 +34,9 @@ def load_user(uid):
     user = getUserByUid(uid)
     return user
 
+@web.route("/")
+def home():
+    return redirect("/profile")
 
 @web.route("/login")
 def login():
