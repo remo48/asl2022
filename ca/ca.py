@@ -99,7 +99,7 @@ class CA:
         """
         Creates a new CA certificate if there is none or fetches one if it exists.
         """
-        location = os.path.join(self.certs, "ca_cert.pem")
+        location = os.path.join(self.certs, self.name + "_cert.pem")
         if os.path.exists(location):
             certificate = self.load_cert(location)
         else:
