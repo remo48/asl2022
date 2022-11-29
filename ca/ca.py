@@ -215,8 +215,37 @@ class RootCA(CA):
     def __init__(self) -> None:
         super().__init__(os.getcwd(), "root")
         self.privatekey = self.get_key()
-        self.certificate = self.get_cert()
+        self.certificate = self.create_root_cert()
         self.crl = self.get_crl()
+
+    def create_root_cert(self):
+        location = os.path.join(self.certs, self.name + "_cert.pem")
+        if os.path.exists(location):
+            certificate = self.load_cert(location)
+        else:
+            serialnr = self.get_serial_number()
+            certificate = crypto.X509()
+            subject = certificate.get_subject()
+            subject.CN = self.name + " CA"
+            subject.O = "iMovies"
+            
+            certificate.add_extensions([crypto.X509Extension(b'basicConstraints', True, b'CA:TRUE')])
+            
+            if self.root == self:
+                certificate.set_issuer(subject)
+            else:
+                certificate.set_issuer(self.root.certificate.get_subject())
+            certificate.set_version(3)
+            certificate.set_subject(subject)
+            certificate.gmtime_adj_notBefore(0)
+            certificate.gmtime_adj_notAfter(31536000)
+            certificate.set_serial_number(serialnr)
+            certificate.set_pubkey(self.root.privatekey)
+            certificate.sign(self.root.privatekey, 'sha256')
+            self.write_cert(location, certificate)
+            self.write_index(serialnr)
+        return certificate
+
 
 
 class InterCA(CA):
@@ -272,7 +301,7 @@ class InterCA(CA):
         key = self.create_key()
         lastUpdate, nextUpdate = self.get_times()
         serialnr = self.get_serial_number()
-        issuer = self.certificate.get_subject()
+        issuer = self.root.certificate.get_subject()
 
         request = crypto.X509Req()
         request.get_subject().CN = self.name
