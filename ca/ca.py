@@ -69,7 +69,7 @@ class CA:
         Updates the crl (certificate revocation list) with newly revoked certificates
         """
         crl = crypto.CRL()
-        crl.set_version(2)
+        crl.set_version(3)
         crl.set_lastUpdate(lastUpdate)
         crl.set_nextUpdate(nextUpdate)
         curr_revkd = self.crl.get_revoked()
@@ -112,7 +112,7 @@ class CA:
                 certificate.set_issuer(subject)
             else:
                 certificate.set_issuer(self.root.certificate.get_subject())
-            certificate.set_version(2)
+            certificate.set_version(3)
             certificate.set_subject(subject)
             certificate.gmtime_adj_notBefore(0)
             certificate.gmtime_adj_notAfter(31536000)
@@ -133,7 +133,7 @@ class CA:
         else:
             lastUpdate, nextUpdate = self.get_times()
             crl = crypto.CRL()
-            crl.set_version(2)
+            crl.set_version(3)
             crl.set_lastUpdate(lastUpdate)
             crl.set_nextUpdate(nextUpdate)
             crl.sign(self.certificate, self.privatekey, b'sha256')
@@ -281,7 +281,7 @@ class InterCA(CA):
         request.sign(key, 'sha256')
         
         certificate = crypto.X509()
-        certificate.set_version(2)
+        certificate.set_version(3)
         certificate.set_notBefore(lastUpdate)
         certificate.set_notAfter(nextUpdate)
         certificate.set_serial_number(serialnr)
