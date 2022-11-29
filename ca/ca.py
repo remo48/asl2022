@@ -87,7 +87,7 @@ class CA:
         """
         Fetches or creates a new keypair of the ca and returns it.
         """
-        location = os.path.join(self.keys, self.name + "_key.pem")
+        location = os.path.join(self.keys, "ca_key.pem")
         if os.path.exists(location):
             privatekey = self.load_key(location)
         else:
@@ -99,7 +99,7 @@ class CA:
         """
         Creates a new CA certificate if there is none or fetches one if it exists.
         """
-        location = os.path.join(self.certs, self.name + "_cert.pem")
+        location = os.path.join(self.certs, "ca_cert.pem")
         if os.path.exists(location):
             certificate = self.load_cert(location)
         else:
@@ -112,6 +112,9 @@ class CA:
                 certificate.set_issuer(subject)
             else:
                 certificate.set_issuer(self.root.certificate.get_subject())
+
+            certificate.add_extensions([crypto.X509Extension(b'basicConstraints', True, b'CA:TRUE')])
+
             certificate.set_version(3)
             certificate.set_subject(subject)
             certificate.gmtime_adj_notBefore(0)
@@ -127,7 +130,7 @@ class CA:
         """
         Creates a crl (certificate revocation list) or returns an existing one
         """
-        location = os.path.join(self.crldir, self.name + "_crl.pem")
+        location = os.path.join(self.crldir, "ca_crl.pem")
         if os.path.exists(location):
             crl = self.load_crl(location)
         else:
@@ -215,38 +218,8 @@ class RootCA(CA):
     def __init__(self) -> None:
         super().__init__(os.getcwd(), "root")
         self.privatekey = self.get_key()
-        self.certificate = self.create_root_cert()
+        self.certificate = self.get_cert()
         self.crl = self.get_crl()
-
-    def create_root_cert(self):
-        location = os.path.join(self.certs, self.name + "_cert.pem")
-        if os.path.exists(location):
-            certificate = self.load_cert(location)
-        else:
-            serialnr = self.get_serial_number()
-            certificate = crypto.X509()
-            subject = certificate.get_subject()
-            subject.CN = self.name + " CA"
-            subject.O = "iMovies"
-            
-            certificate.add_extensions([crypto.X509Extension(b'basicConstraints', True, b'CA:TRUE')])
-            
-            if self.root == self:
-                certificate.set_issuer(subject)
-            else:
-                certificate.set_issuer(self.root.certificate.get_subject())
-            certificate.set_version(3)
-            certificate.set_subject(subject)
-            certificate.gmtime_adj_notBefore(0)
-            certificate.gmtime_adj_notAfter(31536000)
-            certificate.set_serial_number(serialnr)
-            certificate.set_pubkey(self.root.privatekey)
-            certificate.sign(self.root.privatekey, 'sha256')
-            self.write_cert(location, certificate)
-            self.write_index(serialnr)
-        return certificate
-
-
 
 class InterCA(CA):
     """
