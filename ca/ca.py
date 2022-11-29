@@ -305,7 +305,7 @@ class InterCA(CA):
         key = self.create_key()
         lastUpdate, nextUpdate = self.get_times()
         serialnr = self.get_serial_number()
-        issuer = self.certificate.get_subject()
+        issuer = self.root.certificate.get_subject()
 
         request = crypto.X509Req()
         request.get_subject().CN = self.name
@@ -321,7 +321,7 @@ class InterCA(CA):
         certificate.set_issuer(issuer)
         certificate.set_subject(request.get_subject())
         certificate.set_pubkey(key)
-        certificate.sign(self.privatekey, 'sha256')
+        certificate.sign(self.root.privatekey, 'sha256')
 
         pkc = crypto.PKCS12()
         pkc.set_ca_certificates([self.root.certificate, self.certificate])
