@@ -120,7 +120,7 @@ class CA:
             certificate.gmtime_adj_notBefore(0)
             certificate.gmtime_adj_notAfter(31536000)
             certificate.set_serial_number(serialnr)
-            certificate.set_pubkey(self.root.privatekey)
+            certificate.set_pubkey(self.privatekey)
             certificate.sign(self.root.privatekey, 'sha256')
             self.write_cert(location, certificate)
             self.write_index(serialnr)
