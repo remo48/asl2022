@@ -7,6 +7,29 @@ import base64
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.hashes import SHA256
 
+import logging
+from logging.config import dictConfig
+
+LOG_CONFIG = {
+    "version": 1,
+    "formatters": {
+        "default": {
+            "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+        }
+    },
+    "handlers": {
+        "wsgi": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "default",
+            "filename": "ca-server.log",
+            "maxBytes": 1024,
+        }
+    },
+    "root": {"level": "INFO", "handlers": ["wsgi"]},
+}
+dictConfig(LOG_CONFIG)
+
+
 class CA:
     def __init__(self, dir: str, name: str) -> None:
         """
@@ -156,6 +179,7 @@ class CA:
                 serial.seek(0)
                 serial.write(str(int(serialnr) + inc))
                 serial.truncate()
+        logging.info(f"Update serial number to {serialnr}")
         return int(serialnr)
 
     def get_times(self):
@@ -236,6 +260,7 @@ class InterCA(CA):
         """
         Verifies that a given signature matches a challenge signed by the certificate holder given the serial number.
         """
+        logging.info(f"Attempt to verify signature for certificate with serial number {serialnr}")
         try:
             certificate = self.get_cert_by_serial_nr(serialnr)
             signature = base64.b64decode(signature)
@@ -243,8 +268,10 @@ class InterCA(CA):
             certificate = load_pem_x509_certificate(bytes.fromhex(certificate))
             publickey = certificate.public_key()
             publickey.verify(signature, challenge, padding.PKCS1v15(), SHA256())
+            logging.info("Verify signature: SUCCESS ")
             return True
         except Exception:
+            logging.info("Verify signature: FAILURE ")
             return False
 
     def is_revoked(self, serial_nr: int) -> bool:
@@ -252,15 +279,19 @@ class InterCA(CA):
         Checks wheter a certificate with a given serial number has already been revoked
         """
         revoked_certs = self.crl.get_revoked()
+        logging.info(f"Check if revoked: {serial_nr}")
         for rvk in revoked_certs:
             if rvk.get_serial() == str(serial_nr).encode():
+                logging.info("Certificate is revoked")
                 return True
+        logging.info("Certificate is not revoked")
         return False
 
     def getCertificatesBySerialNumbers(self, numbers) -> list:
         """
         Returns a list of certificates given a list of serial numbers. Certificates that are not found are represented by a "None" object.
         """
+        logging.info(f"Request Certificates: {numbers}")
         certificates = []
         for number in numbers:
             if not self.is_revoked(number):
@@ -304,12 +335,16 @@ class InterCA(CA):
             self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
             self.write_key(os.path.join(self.keys, str(serialnr)) + "_key.pem", key)
         self.write_index(serialnr)
+
+        logging.info(f"Create Certificate {serialnr}: SUCCESS ")
+
         return pkc.export(), serialnr
 
     def revoke_certificate(self, serialnr) -> bool:
         """
         Revokes the certificate with the given serial number. Returns a bool indicating wheter the revocation has been successful or not
         """
+        logging.info(f"Attempt to revoke certificate with the following number: {serialnr}")
         for file in os.listdir(self.certs):
             certificate = self.load_cert(file)
             if certificate.get_serial_number() == int(serialnr):
@@ -319,13 +354,16 @@ class InterCA(CA):
                 revoke.set_rev_date(lastUpdate)
                 self.update_crl(revoke, lastUpdate, nextUpdate)                
                 self.revoke_index(serialnr)
+                logging.info("Revoke certificate: SUCCESS")
                 return True
+        logging.info("Revoke certificate: SUCCESS")
         return False
 
     def adminInfo(self):
         """
         Returns basic admin info as specified in the project description
         """
+        logging.info("Admin Info: REQUESTED")
         return {
             'certificates': len([name for name in os.listdir(self.certs)]) if self.certs else 0,
             'revocations': len(self.crl.get_revoked()) if self.crl.get_revoked() else 0,

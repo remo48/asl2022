@@ -17,6 +17,15 @@
     owner: root
     group: root
     mode: 0644
+
+- name: create log file
+  file:
+    path: /home/{{ username }}/ca-server/ca-server.log
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    state: touch
+    attributes: +a
+    mode: u=rw
   
 - name: Reload systemd
   systemd: 
