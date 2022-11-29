@@ -305,7 +305,7 @@ class InterCA(CA):
         key = self.create_key()
         lastUpdate, nextUpdate = self.get_times()
         serialnr = self.get_serial_number()
-        issuer = self.root.certificate.get_subject()
+        issuer = self.certificate.get_subject()
 
         request = crypto.X509Req()
         request.get_subject().CN = self.name
