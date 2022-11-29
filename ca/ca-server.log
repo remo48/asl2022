@@ -1,0 +1,9 @@
+[2022-11-29 22:24:35,976] INFO in ca: Update serial number to 1
+[2022-11-29 22:24:36,183] INFO in ca: Update serial number to 1
+[2022-11-29 22:24:36,316] INFO in ca: Update serial number to 1
+[2022-11-29 22:24:36,531] INFO in ca: Update serial number to 2
+[2022-11-29 22:24:36,536] INFO in ca: Create Certificate 2: SUCCESS 
+[2022-11-29 22:24:36,718] INFO in ca: Update serial number to 3
+[2022-11-29 22:24:36,722] INFO in ca: Create Certificate 3: SUCCESS 
+[2022-11-29 22:24:36,727] INFO in ca: Attempt to revoke certificate with the following number: 2
+[2022-11-29 22:24:36,738] INFO in ca: Revoke certificate: SUCCESS
