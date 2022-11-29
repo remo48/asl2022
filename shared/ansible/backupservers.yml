@@ -63,6 +63,13 @@
         dest: /vagrant/ssh/web/
         flat: yes
 
+- hosts: backupservers,dbservers,caservers,webservers
+  tasks:
+    - name: install rsync
+      package:
+        name: rsync
+        state: present
+      become: true
 
 - hosts: backupservers
   become: yes

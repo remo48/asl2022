@@ -1,9 +1,3 @@
-- name: install rsync
-  package:
-    name: rsync
-    state: present
-  become: true
-
 - name: copy backup script
   copy: src=../files/{{ item }} dest=/home/backup/ owner=backup group=backup mode=0770
   loop:
