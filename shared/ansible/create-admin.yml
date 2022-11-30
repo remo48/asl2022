@@ -30,6 +30,14 @@
         groups: sudo
         append: yes
         state: present
+        password_lock: yes
+      
+    - name: Allow admin user to have passwordless sudo
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: "^admin"
+        line: "admin ALL=(ALL) NOPASSWD: ALL"
     
     - name: Add authorized keys
       authorized_key:

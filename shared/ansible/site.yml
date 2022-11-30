@@ -1,9 +1,10 @@
 ---
 - import_playbook: common.yml
+- import_playbook: create-users.yml
 - import_playbook: distribute-key-material.yml
 - import_playbook: create-admin.yml
 
-# - import_playbook: backupservers.yml
+ - import_playbook: backupservers.yml
 # - import_playbook: configservers.yml
 - import_playbook: dbservers.yml
 - import_playbook: caservers.yml

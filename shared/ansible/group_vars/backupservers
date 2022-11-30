@@ -1,5 +1,5 @@
 ---
-username: asl_backup 
+username: asl-backup 
 usershell: /sbin/nologin
 
 nftables_is_internal_host: true

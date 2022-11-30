@@ -1,0 +1,8 @@
+#!/bin/bash
+
+dest_dir=/home/{{ hostvars['backup'].username }}/web/`date '+%Y%m%d%H%M%S'`/
+
+sudo rsync -az -e "ssh -i /home/{{ backup_username }}/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
+/home/{{ username }}/web-server/web-server.log \
+/var/log/nginx \
+{{ hostvars['backup'].username }}@{{ hostvars['backup'].ansible_host }}:$dest_dir
