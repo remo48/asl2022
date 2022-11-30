@@ -32,9 +32,8 @@ LOG_CONFIG = {
 dictConfig(LOG_CONFIG)
 
 def get_time(day = 0):
-    time = datetime.datetime.now() + datetime.timedelta(days=day) - datetime.timedelta(days=1)
-    res = time.strftime('%Y%m%d%H%M%S') + 'Z'
-    return res.encode('utf-8')
+    time = datetime.datetime.now() + datetime.timedelta(days=day-1)
+    return (time.strftime('%Y%m%d%H%M%S')+'Z').encode()
 
 def get_serial_number(inc:int=1) -> int:
     with open("eca/serial", 'r+') as serial:
@@ -50,14 +49,25 @@ def write_index(serialnr):
     with open("eca/index.txt", 'a') as index:
         index.write(f"{serialnr}, V, {datetime.datetime.now()}\n")
 
+def create_key(name) -> crypto.PKey():
+    key = crypto.PKey()
+    key.generate_key(crypto.TYPE_RSA, 2048)
+    with open(f"keys/{name}_key.pem", "wt") as _key:
+        _key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode())
+    return key
+
+def create_request(name, key) -> crypto.X509Req():
+    req = crypto.X509Req()
+    req.get_subject().CN = name
+    req.get_subject().O = "iMovies"
+    req.set_pubkey(key)
+    req.sign(key, 'sha256')
+    return req
+
 class CA:
     def __init__(self) -> None:
         with open("certs/root_cert.pem", "rt") as root_certificate:
             self.root_certificate = crypto.load_certificate(crypto.FILETYPE_PEM, root_certificate.read())
-        with open("keys/root_key.pem", "rt") as root_key:
-            self.root_key = crypto.load_privatekey(crypto.FILETYPE_PEM, root_key.read())
-        with open("crl/root_crl.pem", "rt") as root_crl:
-            self.root_crl = crypto.load_crl(crypto.FILETYPE_PEM, root_crl.read())
 
         with open("eca/certs/eca_cert.pem", "rt") as certificate:
             self.certificate = crypto.load_certificate(crypto.FILETYPE_PEM, certificate.read())
@@ -68,13 +78,13 @@ class CA:
 
     def save_key(self, serialnr, key):
         with open(f"eca/keys/{serialnr}_key.pem", "wt") as _key:
-            _key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode('utf-8'))
+            _key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode())
             logging.info(f"Saved key with serialnr: {serialnr}")
     
     def save_cert(self, serialnr, certificates):
         cert = ""
         for certificate in certificates:
-            cert += crypto.dump_certificate(crypto.FILETYPE_PEM, certificate).decode('utf-8')
+            cert += crypto.dump_certificate(crypto.FILETYPE_PEM, certificate).decode()
         with open(f"eca/certs/{serialnr}_cert.pem", "wt") as _certificate:
             _certificate.write(cert)
             logging.info(f"Saved certificate with serialnr: {serialnr}")
@@ -106,7 +116,7 @@ class CA:
         cert.set_subject(req.get_subject())
         cert.set_serial_number(serialnr)
         cert.set_notBefore(get_time(0))
-        cert.set_notAfter(get_time(100))
+        cert.set_notAfter(get_time(365))
         cert.set_issuer(self.certificate.get_subject())
         cert.set_subject(req.get_subject())
         cert.set_pubkey(req.get_pubkey())
@@ -136,8 +146,8 @@ class CA:
                 crl.add_revoked(rvkd)
         crl.add_revoked(revoke)
         crl.sign(self.certificate, self.key, b'sha256')
-        with open("eca/crl/eca_crl.pem", "wt") as _crl:
-            _crl.write(crypto.dump_crl(crypto.FILETYPE_PEM, crl).decode('utf-8'))
+        with open("crl/eca_crl.pem", "wt") as _crl:
+            _crl.write(crypto.dump_crl(crypto.FILETYPE_PEM, crl).decode())
         self.crl = crl
 
     def verifySignature(self, challenge, signature, serialnr) -> bool:

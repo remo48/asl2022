@@ -1,12 +1,7 @@
 import os
 import datetime
 from OpenSSL import crypto
-from ca import get_serial_number, write_index, CA
-
-def get_time(day = 0):
-    time = datetime.datetime.now() + datetime.timedelta(days=day) - datetime.timedelta(days=1)
-    res = time.strftime('%Y%m%d%H%M%S') + 'Z'
-    return res.encode('utf-8')
+from ca import get_serial_number, write_index, CA, create_key, create_request, get_time
 
 def create_folderstructure():
     os.makedirs("certs")
@@ -15,11 +10,10 @@ def create_folderstructure():
     os.makedirs("ica")
     os.makedirs("ica/certs")
     os.makedirs("ica/keys")
-    os.makedirs("ica/crl")
     os.makedirs("eca")
+    os.makedirs("eca/backup")
     os.makedirs("eca/certs")
     os.makedirs("eca/keys")
-    os.makedirs("eca/crl")
     f = open("eca/serial", "w")
     f.write(str(0))
     f = open("eca/index.txt", "w")
@@ -27,18 +21,18 @@ def create_folderstructure():
 
 def save_key(location, key):
     with open(location + ".pem", "wt") as _key:
-        _key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode('utf-8'))
+        _key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode())
 
 def save_cert(location, certificates):
     cert = ""
     for certificate in certificates:
-        cert += crypto.dump_certificate(crypto.FILETYPE_PEM, certificate).decode('utf-8')
+        cert += crypto.dump_certificate(crypto.FILETYPE_PEM, certificate).decode()
     with open(location + ".pem", "wt") as _certificate:
         _certificate.write(cert)
 
 def save_crl(location, crl):
     with open(location + ".pem", "wt") as _crl:
-        _crl.write(crypto.dump_crl(crypto.FILETYPE_PEM, crl).decode('utf-8'))
+        _crl.write(crypto.dump_crl(crypto.FILETYPE_PEM, crl).decode())
 
 def load_key(location):
     with open(location, "rt") as _private_key:
@@ -54,17 +48,14 @@ def load_crl(location):
 
 def createRootCA():
     valid_from = get_time(0)
-    valid_until = get_time(100)
+    valid_until = get_time(365)
     serialnr = get_serial_number()
 
-    root_key = crypto.PKey()
-    root_key.generate_key(crypto.TYPE_RSA, 2048)
-    save_key("keys/root_key", root_key)
-
+    root_key = create_key("root")
     root_cert = crypto.X509()
-    root_cert.set_version(2)
     root_cert.get_subject().CN = "root CA"
     root_cert.get_subject().O = "iMovies"
+    root_cert.set_version(2)
     root_cert.set_serial_number(serialnr)
     root_cert.set_notBefore(valid_from)
     root_cert.set_notAfter(valid_until)
@@ -88,28 +79,18 @@ def createRootCA():
 
 def createIntermediateCA(name: str):
     valid_from = get_time(0)
-    valid_until = get_time(100)
+    valid_until = get_time(365)
     serialnr = get_serial_number()
 
-    root_cert = load_cert("certs/root_cert.pem")
-    root_key = load_key("keys/root_key.pem")
-
-    key = crypto.PKey()
-    key.generate_key(crypto.TYPE_RSA, 2048)
-    save_key(f"{name}/keys/{name}_key", key)
-
-    req = crypto.X509Req()
-    req.get_subject().CN = name
-    req.get_subject().O = "iMovies"
-    req.set_pubkey(key)
-    req.sign(key, 'sha256')
-
+    key = create_key(name)
+    req = create_request(name, key)
     cert = crypto.X509()
     cert.set_version(2)
     cert.set_subject(req.get_subject())
     cert.set_serial_number(serialnr)
     cert.set_notBefore(valid_from)
     cert.set_notAfter(valid_until)
+    root_cert = load_cert("certs/root_cert.pem")
     cert.set_issuer(root_cert.get_subject())
     cert.set_subject(req.get_subject())
     cert.set_pubkey(req.get_pubkey())
@@ -118,8 +99,8 @@ def createIntermediateCA(name: str):
     crypto.X509Extension(b"keyUsage", True, b"keyCertSign, cRLSign"),
     crypto.X509Extension(b"subjectKeyIdentifier", False, b"hash", subject=cert),
     ])
-    cert.sign(root_key, 'sha256')
-    save_cert(f"{name}/certs/{name}_cert", [cert])
+    cert.sign(load_key("keys/root_key.pem"), 'sha256')
+    save_cert(f"certs/{name}_cert", [cert])
     write_index(serialnr)
 
     crl = crypto.CRL()
@@ -127,30 +108,21 @@ def createIntermediateCA(name: str):
     crl.set_nextUpdate(valid_until)
     crl.set_version(1)
     crl.sign(cert, key, b'sha256')
-    save_crl(f"{name}/crl/{name}_crl", crl)
+    save_crl(f"crl/{name}_crl", crl)
 
 def createICACert(name: str):
     serialnr = get_serial_number()
 
-    ica_cert = load_cert("ica/certs/ica_cert.pem")
-    ica_key = load_key("ica/keys/ica_key.pem")
-
-    key = crypto.PKey()
-    key.generate_key(crypto.TYPE_RSA, 2048)
-    save_key(f"ica/keys/{name}_key", key)
-
-    req = crypto.X509Req()
-    req.get_subject().CN = name
-    req.get_subject().O = "iMovies"
-    req.set_pubkey(key)
-    req.sign(key, 'sha256')
+    key = create_key(name)
+    req = create_request(name, key)
 
     cert = crypto.X509()
     cert.set_version(2)
     cert.set_subject(req.get_subject())
     cert.set_serial_number(serialnr)
     cert.set_notBefore(get_time(0))
-    cert.set_notAfter(get_time(100))
+    cert.set_notAfter(get_time(365))
+    ica_cert = load_cert("certs/ica_cert.pem")
     cert.set_issuer(ica_cert.get_subject())
     cert.set_subject(req.get_subject())
     cert.set_pubkey(req.get_pubkey())
@@ -162,9 +134,13 @@ def createICACert(name: str):
     cert.add_extensions([
         crypto.X509Extension(b'extendedKeyUsage', False, b'serverAuth, clientAuth'),
     ])
-    cert.sign(ica_key, 'sha256')
+
+    cert.sign(load_key("keys/ica_key.pem"), 'sha256')
     save_cert(f"ica/certs/{name}_cert", [cert, ica_cert])
     write_index(serialnr)
+
+def create_backup():
+    pass
 
 if __name__ == "__main__":
     create_folderstructure()
