@@ -1,0 +1,55 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 2 (0x2)
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: CN=root, O=iMovies
+        Validity
+            Not Before: Nov 30 14:45:44 2022 GMT
+            Not After : Nov 29 14:45:44 2027 GMT
+        Subject: CN=ica, O=iMovies
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:ba:90:eb:6e:7d:d6:6a:e8:ed:e5:b9:3b:25:4d:
+                    d0:4f:9f:85:77:1d:6f:94:ec:3e:06:a7:39:ef:ff:
+                    53:94:41:a4:97:8a:80:76:7d:dd:8f:e5:80:18:e5:
+                    0c:ca:5a:d6:df:cb:42:9c:d1:d4:df:a8:36:e5:46:
+                    f6:32:41:7a:79:bd:d2:16:c4:c2:56:0e:74:6c:f3:
+                    9d:26:9b:9f:85:50:4c:84:09:f3:8f:0e:2e:57:ff:
+                    eb:fa:dd:af:6b:b8:3d:5b:4d:13:34:bc:a9:03:07:
+                    02:98:c6:a7:62:c4:11:68:5a:be:f6:d3:dd:f8:42:
+                    50:45:74:81:7f:6b:33:ec:fe:ed:5e:51:bd:94:82:
+                    e2:64:2a:e4:35:f0:57:e3:f5:ed:f7:56:e3:48:a3:
+                    c3:db:96:c9:0f:03:75:17:f2:98:ea:5e:cb:8d:cd:
+                    35:ff:b4:43:af:87:39:86:28:26:69:5d:39:01:93:
+                    64:16:b7:58:21:58:95:96:68:28:91:23:84:77:1b:
+                    8e:46:43:bb:5f:a5:88:1e:0c:6e:e0:6a:e6:f9:9b:
+                    8a:04:d5:43:62:49:c2:62:ec:ba:bd:14:6a:9b:71:
+                    cc:50:ac:98:89:8f:26:bd:1f:e4:51:16:f8:27:80:
+                    06:bd:5e:03:3f:75:c2:bb:6c:39:e6:be:7d:e1:10:
+                    85:7d
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: critical
+                CA:TRUE, pathlen:0
+            X509v3 Key Usage: critical
+                Certificate Sign, CRL Sign
+    Signature Algorithm: sha256WithRSAEncryption
+    Signature Value:
+        15:30:f1:f0:4d:08:d6:2e:45:ff:6a:27:a5:8a:96:87:e2:85:
+        93:2e:a9:de:60:89:de:d0:f5:cd:11:d4:7b:b3:2c:d7:71:f3:
+        25:b1:21:8b:fd:82:95:12:88:7c:43:60:1e:dc:86:8c:62:2a:
+        ec:5e:47:88:1f:77:ed:f1:a1:54:39:5e:9f:73:da:05:69:b1:
+        b8:a4:4a:52:6a:1d:a9:46:16:e2:83:72:65:e6:86:de:2e:36:
+        3e:dd:c5:96:26:48:f9:5c:58:78:d5:92:44:ec:49:09:df:35:
+        7c:74:78:e2:a7:e4:4d:f2:a4:b6:77:fb:79:5b:db:3a:6a:c7:
+        34:fc:9c:12:73:e9:ce:2d:66:ab:1b:a5:93:79:a3:3a:11:d0:
+        4f:9c:b0:53:c1:35:bb:bb:b1:0d:12:d7:b4:20:4c:07:63:55:
+        2e:d6:24:c3:49:d8:39:96:a1:ee:c6:2b:01:56:58:81:7b:7c:
+        82:78:f1:96:d1:b2:1e:f2:20:20:e8:6b:24:8e:c2:8c:f4:7c:
+        4b:63:19:fb:73:22:e9:7a:3d:08:78:a1:71:b5:05:b6:39:1f:
+        4f:aa:4e:c0:b8:3c:29:10:51:dd:4a:f7:4f:77:96:1b:fd:96:
+        a5:e4:f0:4b:78:0e:68:df:06:fd:05:41:75:02:05:49:eb:02:
+        d3:d5:d0:09
