@@ -9,6 +9,8 @@ from cryptography.hazmat.primitives.hashes import SHA256
 
 import logging
 from logging.config import dictConfig
+from cryptography.hazmat.primitives.serialization import NoEncryption, Encoding
+
 
 LOG_CONFIG = {
     "version": 1,
@@ -142,13 +144,11 @@ class CA:
         try:
             certificate = self.load_cert(serialnr)
             signature = base64.b64decode(signature)
-            certificate = load_pem_x509_certificate(bytes.fromhex(certificate))
-            publickey = certificate.public_key()
-            publickey.verify(signature, challenge.encode(), padding.PKCS1v15(), SHA256())
+            crypto.verify(certificate, signature, challenge.encode(), "SHA256")
             logging.info(f"Verify signature: SUCCESS {serialnr}")
             return True
-        except:
-            logging.info(f"Verify signature: FAILURE {serialnr}")
+        except Exception as e:
+            logging.info(f"Verify signature: FAILURE {serialnr}, {e}")
             return False
 
     def revoke_index(self, serialnr) -> bool:
@@ -164,6 +164,8 @@ class CA:
 
     def is_revoked(self, serialnr) -> bool:
         revoked_certs = self.crl.get_revoked()
+        if not revoked_certs:
+            return False
         for rvk in revoked_certs:
             if rvk.get_serial() == str(serialnr).encode():
                 logging.info(f"Check Certificate {serialnr} revoked: TRUE")
@@ -173,9 +175,11 @@ class CA:
 
     def getCertificatesBySerialNumbers(self, numbers) -> list:
         certificates = []
+        if not numbers:
+            return certificates
         for number in numbers:
             if not self.is_revoked(number):
-                certificates.append(self.load_cert(number))
+                certificates.append(self.load_cert(number).to_cryptography().public_bytes(Encoding.PEM))
             else:
                 certificates.append(None)
         return certificates

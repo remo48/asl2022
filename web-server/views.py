@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.serialization.pkcs12 import (
     load_key_and_certificates,
     serialize_key_and_certificates,
 )
-from cryptography.hazmat.primitives.serialization import NoEncryption
+from cryptography.hazmat.primitives.serialization import NoEncryption, Encoding
 
 
 web = Blueprint(
