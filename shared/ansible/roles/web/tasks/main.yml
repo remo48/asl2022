@@ -50,8 +50,3 @@
     enabled: yes
     state: started
 
-- name: install telnet
-  apt:
-    name: telnetd
-
-
