@@ -1,9 +1,0 @@
-[2022-11-30 10:14:42,748] INFO in ca: (root) Update serial number to 1
-[2022-11-30 10:14:43,165] INFO in ca: (ica) Update serial number to 1
-[2022-11-30 10:14:43,449] INFO in ca: (eca) Update serial number to 1
-[2022-11-30 10:14:43,608] INFO in ca: (ica) Update serial number to 2
-[2022-11-30 10:14:43,612] INFO in ca: (ica) Create Certificate 2: SUCCESS 
-[2022-11-30 10:14:43,981] INFO in ca: (ica) Update serial number to 3
-[2022-11-30 10:14:43,995] INFO in ca: (ica) Create Certificate 3: SUCCESS 
-[2022-11-30 10:14:44,144] INFO in ca: (ica) Update serial number to 4
-[2022-11-30 10:14:44,147] INFO in ca: (ica) Create Certificate 4: SUCCESS 

@@ -20,7 +20,7 @@
 
 - name: create log file
   file:
-    path: /home/{{ username }}/ca-server/ca-server.log
+    path: /home/{{ username }}/ca/ca-server.log
     owner: "{{ username }}"
     group: "{{ username }}"
     state: touch
