@@ -87,6 +87,8 @@ def createRootCA():
     save_crl("crl/root_crl", crl)
 
 def createIntermediateCA(name: str):
+    valid_from = get_time(0)
+    valid_until = get_time(100)
     serialnr = get_serial_number()
 
     root_cert = load_cert("certs/root_cert.pem")
@@ -106,8 +108,8 @@ def createIntermediateCA(name: str):
     cert.set_version(2)
     cert.set_subject(req.get_subject())
     cert.set_serial_number(serialnr)
-    cert.set_notBefore(get_time(0))
-    cert.set_notAfter(get_time(100))
+    cert.set_notBefore(valid_from)
+    cert.set_notAfter(valid_until)
     cert.set_issuer(root_cert.get_subject())
     cert.set_subject(req.get_subject())
     cert.set_pubkey(req.get_pubkey())
@@ -119,6 +121,13 @@ def createIntermediateCA(name: str):
     cert.sign(root_key, 'sha256')
     save_cert(f"{name}/certs/{name}_cert", [cert])
     write_index(serialnr)
+
+    crl = crypto.CRL()
+    crl.set_lastUpdate(valid_from)
+    crl.set_nextUpdate(valid_until)
+    crl.set_version(1)
+    crl.sign(cert, key, b'sha256')
+    save_crl(f"{name}/crl/{name}_crl", crl)
 
 def createICACert(name: str):
     serialnr = get_serial_number()
@@ -145,9 +154,10 @@ def createICACert(name: str):
     cert.set_issuer(ica_cert.get_subject())
     cert.set_subject(req.get_subject())
     cert.set_pubkey(req.get_pubkey())
+    dns = ["DNS:*.imovies.ch"]
     cert.add_extensions([
-        crypto.X509Extension(
-            b'extendedKeyUsage', False, b'serverAuth, clientAuth'),
+        crypto.X509Extension(b'extendedKeyUsage', False, b'serverAuth, clientAuth'),
+        crypto.X509Extension(b'subjectAltName', False, ", ".join(dns).encode())
     ])
     cert.sign(ica_key, 'sha256')
     save_cert(f"ica/certs/{name}_cert", [cert, ica_cert])
@@ -165,7 +175,7 @@ if __name__ == "__main__":
     ca = CA()
     ca.create_certificate()
 
-    #     def verifySignature(self, challenge, signature, serialnr) -> bool:
+#     def verifySignature(self, challenge, signature, serialnr) -> bool:
 #         """
 #         Verifies that a given signature matches a challenge signed by the certificate holder given the serial number.
 #         """
@@ -206,86 +216,6 @@ if __name__ == "__main__":
 #             if not self.is_revoked(number):
 #                 certificates.append(self.get_cert_by_serial_nr(number))
 #         return certificates
-
-#     def create_certificate(self, firstName, lastName, email, uid):
-#         """
-#         Creates a certificate
-#         """
-#         key = self.create_key()
-#         lastUpdate, nextUpdate = self.get_times()
-#         serialnr = self.get_serial_number()
-#         issuer = self.root.certificate.get_subject()
-
-#         request = crypto.X509Req()
-#         request.get_subject().CN = firstName
-#         request.get_subject().O = "iMovies"
-#         request.set_pubkey(key)
-#         request.sign(key, 'sha256')
-        
-#         certificate = crypto.X509()
-#         certificate.set_version(3)
-#         certificate.set_notBefore(lastUpdate)
-#         certificate.set_notAfter(nextUpdate)
-#         certificate.set_serial_number(serialnr)
-#         certificate.set_issuer(issuer)
-#         certificate.set_subject(request.get_subject())
-#         certificate.set_pubkey(key)
-#         certificate.sign(self.root.privatekey, 'sha256')
-
-#         pkc = crypto.PKCS12()
-#         pkc.set_ca_certificates([self.root.certificate])
-#         pkc.set_certificate(certificate)
-#         pkc.set_privatekey(key)
-
-#         if self.name == "ica":
-#             self.write_cert(os.path.join(self.certs, f"{firstName}") + "_cert.pem", certificate)
-#             self.write_key(os.path.join(self.keys, f"{firstName}") + "_key.pem", key)
-#         else:
-#             self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
-#             self.write_key(os.path.join(self.keys, f"{serialnr}") + "_key.pem", key)
-#         self.write_index(serialnr)
-
-#         logging.info(f"({self.name}) Create Certificate {serialnr}: SUCCESS ")
-
-#         return pkc.export(), serialnr
-
-#         # key = self.create_key()
-#         # lastUpdate, nextUpdate = self.get_times()
-#         # serialnr = self.get_serial_number()
-#         # issuer = self.root.certificate.get_subject()
-
-#         # request = crypto.X509Req()
-#         # request.get_subject().CN = self.name
-#         # request.get_subject().O = "iMovies"
-#         # request.set_pubkey(key)
-#         # request.sign(key, 'sha256')
-        
-#         # certificate = crypto.X509()
-#         # certificate.set_version(3)
-#         # certificate.set_notBefore(lastUpdate)
-#         # certificate.set_notAfter(nextUpdate)
-#         # certificate.set_serial_number(serialnr)
-#         # certificate.set_issuer(issuer)
-#         # certificate.set_subject(request.get_subject())
-#         # certificate.set_pubkey(key)
-#         # certificate.sign(self.privatekey, 'sha256')
-
-#         # pkc = crypto.PKCS12()
-#         # pkc.set_ca_certificates([self.root.certificate, self.certificate])
-#         # pkc.set_certificate(certificate)
-#         # pkc.set_privatekey(key)
-
-#         # if self.name == "ica":
-#         #     self.write_cert(os.path.join(self.certs, f"{firstName}") + "_cert.pem", certificate)
-#         #     self.write_key(os.path.join(self.keys, firstName) + "_key.pem", key)
-#         # else:
-#         #     self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
-#         #     self.write_key(os.path.join(self.keys, str(serialnr)) + "_key.pem", key)
-#         # self.write_index(serialnr)
-
-#         # logging.info(f"({self.name}) Create Certificate {serialnr}: SUCCESS ")
-
-#         # return pkc.export(), serialnr
 
 #     def revoke_certificate(self, serialnr) -> bool:
 #         """

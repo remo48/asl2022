@@ -54,14 +54,18 @@ class CA:
             self.root_certificate = crypto.load_certificate(crypto.FILETYPE_PEM, root_certificate.read())
         with open("keys/root_key.pem", "rt") as root_key:
             self.root_key = crypto.load_privatekey(crypto.FILETYPE_PEM, root_key.read())
+        with open("crl/root_crl.pem", "rt") as root_crl:
+            self.root_crl = crypto.load_crl(crypto.FILETYPE_PEM, root_crl.read())
 
         with open("eca/certs/eca_cert.pem", "rt") as certificate:
             self.certificate = crypto.load_certificate(crypto.FILETYPE_PEM, certificate.read())
-        with open("keys/root_key.pem", "rt") as key:
+        with open("eca/keys/eca_key.pem", "rt") as key:
             self.key = crypto.load_privatekey(crypto.FILETYPE_PEM, key.read())
+        with open("eca/crl/eca_crl.pem", "rt") as root_crl:
+            self.crl = crypto.load_crl(crypto.FILETYPE_PEM, root_crl.read())
 
     def save_key(self, serialnr, key):
-        with open(f"eca/keys/{serialnr}.pem", "wt") as _key:
+        with open(f"eca/keys/{serialnr}_key.pem", "wt") as _key:
             _key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode('utf-8'))
             logging.info(f"Saved key with serialnr: {serialnr}")
     
@@ -72,6 +76,10 @@ class CA:
         with open(f"eca/certs/{serialnr}_cert.pem", "wt") as _certificate:
             _certificate.write(cert)
             logging.info(f"Saved certificate with serialnr: {serialnr}")
+
+    def load_cert(self, serialnr):
+        with open(f"eca/certs/{serialnr}_cert.pem", "rt") as cert:
+            return crypto.load_certificate(crypto.FILETYPE_PEM, cert.read())
 
     def create_certificate(self):
         serialnr = get_serial_number()
@@ -100,9 +108,94 @@ class CA:
                 b'extendedKeyUsage', False, b'serverAuth, clientAuth'),
         ])
         cert.sign(self.key, 'sha256')
+        logging.info(f"Created new certificate with serialnr: {serialnr}")
         self.save_cert(serialnr ,[cert, self.certificate])
         write_index(serialnr)
 
+        pkc = crypto.PKCS12()
+        pkc.set_ca_certificates([self.root_certificate, self.certificate])
+        pkc.set_certificate(cert)
+        pkc.set_privatekey(key)
+        return pkc.export(), serialnr
+
+    def update_crl(self, revoke:crypto.Revoked, lastUpdate, nextUpdate):
+        crl = crypto.CRL()
+        crl.set_version(2)
+        crl.set_lastUpdate(lastUpdate)
+        crl.set_nextUpdate(nextUpdate)
+        curr_revkd = self.crl.get_revoked()
+        if curr_revkd:
+            for rvkd in curr_revkd:
+                crl.add_revoked(rvkd)
+        crl.add_revoked(revoke)
+        crl.sign(self.certificate, self.privatekey, b'sha256')
+        with open("eca/crl/eca_crl.pem", "wt") as _crl:
+            _crl.write(crypto.dump_crl(crypto.FILETYPE_PEM, crl))
+        self.crl = crl
+
+    def verifySignature(self, challenge, signature, serialnr) -> bool:
+        try:
+            certificate = self.load_cert(serialnr)
+            signature = base64.b64decode(signature)
+            challenge = challenge.encode()
+            certificate = load_pem_x509_certificate(bytes.fromhex(certificate))
+            publickey = certificate.public_key()
+            publickey.verify(signature, challenge, padding.PKCS1v15(), SHA256())
+            logging.info(f"Verify signature: SUCCESS {serialnr}")
+            return True
+        except:
+            logging.info(f"Verify signature: FAILURE {serialnr}")
+            return False
+
+    def revoke_index(self, serialnr):
+        with open("eca/index.txt", 'r') as file:
+            data = file.readlines()
+            for i, line in enumerate(data):
+                print(line)
+                if f"{serialnr}, Valid" in line:
+                    data[i] = f"{serialnr}, R, {datetime.datetime.now()}\n"
+                    with open("eca/index.txt", 'w') as file:
+                        file.writelines(data)
+                        return
+
+    def is_revoked(self, serialnr) -> bool:
+        revoked_certs = self.crl.get_revoked()
+        for rvk in revoked_certs:
+            if rvk.get_serial() == str(serialnr).encode():
+                logging.info(f"Check Certificate {serialnr} revoked: TRUE")
+                return True
+        logging.info(f"Check Certificate {serialnr} revoked: FALSE")
+        return False
+
+    def getCertificatesBySerialNumbers(self, numbers) -> list:
+        certificates = []
+        for number in numbers:
+            if not self.is_revoked(number):
+                certificates.append()
+
+    def revoke_certificate(self, serialnr) -> bool:
+        for file in os.listdir("eca/certs"):
+            with open(file, "rt") as cert: 
+                if cert.get_serial_number() == int(serialnr):
+                    lastUpdate = get_time(0)
+                    nextUpdate = get_time(365)
+                    revoke = crypto.Revoked()
+                    revoke.set_serial(str(serialnr).encode())
+                    revoke.set_rev_date(lastUpdate)
+                    self.update_crl(revoke, lastUpdate, nextUpdate)
+                    self.revoke_index(serialnr)
+                    logging.info(f"Revoke certificate {serialnr}: SUCCESS")
+                    return True
+        logging.info(f"Revoke certificate {serialnr}: FAILURE")
+        return False
+
+    def adminInfo(self):
+        admin_info = {
+            'certificates': len([name for name in os.listdir("eca/certs")]) -1,
+            'revocations': len(self.crl.get_revoked()) if self.crl.get_revoked() else 0,
+            'serial_nr': get_serial_number(0)
+        }
+        logging.info(f"Admin Info: REQUESTED ({admin_info['certificates']}, {admin_info['revocations']}, {admin_info['serial_nr']}")
 
 #     def __init__(self, dir: str, name: str) -> None:
 #         """
