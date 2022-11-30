@@ -1,9 +1,7 @@
 from flask import Flask, request, jsonify, make_response
-from ca import RootCA, InterCA
+from ca import CA
 import base64 
-root = RootCA()
-ica = InterCA(root, "ica")
-eca = InterCA(root, "eca")
+ca = CA()
 
 app = Flask(__name__)
 
@@ -13,7 +11,7 @@ def verify_signature_ica():
     if valid_request():
         req = request.json()
         response = jsonify(
-            {"verified": ica.verifySignature(certificate=req["certificate"])}
+            {"verified": ca.verifySignature(certificate=req["certificate"])}
         )
         return make_response(response, 200)
     else:
@@ -30,7 +28,7 @@ def verify_signature_eca():
         signature = request.form.get("signature")
         serial = request.form.get("serial")
         response = jsonify(
-            {"verified": eca.verifySignature(challenge, signature, serial)}
+            {"verified": ca.verifySignature(challenge, signature, serial)}
         )
         return make_response(response, 200)
     else:
@@ -48,7 +46,7 @@ def get_certificates_by_serial_numbers():
             response.status_code = 200
             return response
         response = jsonify(
-            {"certificates": eca.getCertificatesBySerialNumbers(numbers=numbers)}
+            {"certificates": ca.getCertificatesBySerialNumbers(numbers=numbers)}
         )
         return make_response(response, 200)
     else:
@@ -61,7 +59,7 @@ def get_certificates_by_serial_numbers():
 def create_certificate():
     if valid_request():
         req = request.form
-        data, serial = eca.create_certificate(
+        data, serial = ca.create_certificate(
             firstName=req["firstName"],
             lastName=req["lastName"],
             email=req["email"],
@@ -80,7 +78,7 @@ def revoke_cert():
     if valid_request():
         serial = request.form.get("serialNumber")
         response = jsonify(
-            {"status": eca.revoke_certificate(serial)}
+            {"status": ca.revoke_certificate(serial)}
         )
         return make_response(response, 200)
     else:
@@ -92,7 +90,7 @@ def revoke_cert():
 @app.route("/adminInfo", methods=["POST"])
 def admin_info():
     if valid_request():
-        response = jsonify({"status": eca.adminInfo()})
+        response = jsonify({"status": ca.adminInfo()})
         return make_response(response, 200)
     else:
         response = jsonify({"message": "Bad request"})

@@ -87,6 +87,8 @@ def createRootCA():
     save_crl("crl/root_crl", crl)
 
 def createIntermediateCA(name: str):
+    valid_from = get_time(0)
+    valid_until = get_time(100)
     serialnr = get_serial_number()
 
     root_cert = load_cert("certs/root_cert.pem")
@@ -106,8 +108,8 @@ def createIntermediateCA(name: str):
     cert.set_version(2)
     cert.set_subject(req.get_subject())
     cert.set_serial_number(serialnr)
-    cert.set_notBefore(get_time(0))
-    cert.set_notAfter(get_time(100))
+    cert.set_notBefore(valid_from)
+    cert.set_notAfter(valid_until)
     cert.set_issuer(root_cert.get_subject())
     cert.set_subject(req.get_subject())
     cert.set_pubkey(req.get_pubkey())
@@ -119,6 +121,13 @@ def createIntermediateCA(name: str):
     cert.sign(root_key, 'sha256')
     save_cert(f"{name}/certs/{name}_cert", [cert])
     write_index(serialnr)
+
+    crl = crypto.CRL()
+    crl.set_lastUpdate(valid_from)
+    crl.set_nextUpdate(valid_until)
+    crl.set_version(1)
+    crl.sign(cert, key, b'sha256')
+    save_crl(f"{name}/crl/{name}_crl", crl)
 
 def createICACert(name: str):
     serialnr = get_serial_number()
@@ -145,9 +154,10 @@ def createICACert(name: str):
     cert.set_issuer(ica_cert.get_subject())
     cert.set_subject(req.get_subject())
     cert.set_pubkey(req.get_pubkey())
+    dns = ["DNS:www.imovies.ch", "DNS:imovies.ch", "IP:192.168.99.20"]
     cert.add_extensions([
-        crypto.X509Extension(
-            b'extendedKeyUsage', False, b'serverAuth, clientAuth'),
+        crypto.X509Extension(b'extendedKeyUsage', False, b'serverAuth, clientAuth'),
+        crypto.X509Extension(b'subjectAltName', False, ", ".join(dns).encode())
     ])
     cert.sign(ica_key, 'sha256')
     save_cert(f"ica/certs/{name}_cert", [cert, ica_cert])
@@ -161,158 +171,3 @@ if __name__ == "__main__":
     createICACert("web")
     createICACert("db")
     createICACert("ca")
-
-    ca = CA()
-    ca.create_certificate()
-
-    #     def verifySignature(self, challenge, signature, serialnr) -> bool:
-#         """
-#         Verifies that a given signature matches a challenge signed by the certificate holder given the serial number.
-#         """
-#         logging.info(f"({self.name}) Attempt to verify signature for certificate with serial number {serialnr}")
-#         try:
-#             certificate = self.get_cert_by_serial_nr(serialnr)
-#             signature = base64.b64decode(signature)
-#             challenge = challenge.encode()
-#             certificate = load_pem_x509_certificate(bytes.fromhex(certificate))
-#             publickey = certificate.public_key()
-#             publickey.verify(signature, challenge, padding.PKCS1v15(), SHA256())
-#             logging.info(f"({self.name}) Verify signature: SUCCESS ")
-#             return True
-#         except Exception:
-#             logging.info(f"({self.name}) Verify signature: FAILURE ")
-#             return False
-
-#     def is_revoked(self, serial_nr: int) -> bool:
-#         """
-#         Checks wheter a certificate with a given serial number has already been revoked
-#         """
-#         revoked_certs = self.crl.get_revoked()
-#         logging.info(f"({self.name}) Check if revoked: {serial_nr}")
-#         for rvk in revoked_certs:
-#             if rvk.get_serial() == str(serial_nr).encode():
-#                 logging.info(f"{self.name}: Certificate is revoked")
-#                 return True
-#         logging.info(f"({self.name}) Certificate is not revoked")
-#         return False
-
-#     def getCertificatesBySerialNumbers(self, numbers) -> list:
-#         """
-#         Returns a list of certificates given a list of serial numbers. Certificates that are not found are represented by a "None" object.
-#         """
-#         logging.info(f"({self.name}) Request Certificates: {numbers}")
-#         certificates = []
-#         for number in numbers:
-#             if not self.is_revoked(number):
-#                 certificates.append(self.get_cert_by_serial_nr(number))
-#         return certificates
-
-#     def create_certificate(self, firstName, lastName, email, uid):
-#         """
-#         Creates a certificate
-#         """
-#         key = self.create_key()
-#         lastUpdate, nextUpdate = self.get_times()
-#         serialnr = self.get_serial_number()
-#         issuer = self.root.certificate.get_subject()
-
-#         request = crypto.X509Req()
-#         request.get_subject().CN = firstName
-#         request.get_subject().O = "iMovies"
-#         request.set_pubkey(key)
-#         request.sign(key, 'sha256')
-        
-#         certificate = crypto.X509()
-#         certificate.set_version(3)
-#         certificate.set_notBefore(lastUpdate)
-#         certificate.set_notAfter(nextUpdate)
-#         certificate.set_serial_number(serialnr)
-#         certificate.set_issuer(issuer)
-#         certificate.set_subject(request.get_subject())
-#         certificate.set_pubkey(key)
-#         certificate.sign(self.root.privatekey, 'sha256')
-
-#         pkc = crypto.PKCS12()
-#         pkc.set_ca_certificates([self.root.certificate])
-#         pkc.set_certificate(certificate)
-#         pkc.set_privatekey(key)
-
-#         if self.name == "ica":
-#             self.write_cert(os.path.join(self.certs, f"{firstName}") + "_cert.pem", certificate)
-#             self.write_key(os.path.join(self.keys, f"{firstName}") + "_key.pem", key)
-#         else:
-#             self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
-#             self.write_key(os.path.join(self.keys, f"{serialnr}") + "_key.pem", key)
-#         self.write_index(serialnr)
-
-#         logging.info(f"({self.name}) Create Certificate {serialnr}: SUCCESS ")
-
-#         return pkc.export(), serialnr
-
-#         # key = self.create_key()
-#         # lastUpdate, nextUpdate = self.get_times()
-#         # serialnr = self.get_serial_number()
-#         # issuer = self.root.certificate.get_subject()
-
-#         # request = crypto.X509Req()
-#         # request.get_subject().CN = self.name
-#         # request.get_subject().O = "iMovies"
-#         # request.set_pubkey(key)
-#         # request.sign(key, 'sha256')
-        
-#         # certificate = crypto.X509()
-#         # certificate.set_version(3)
-#         # certificate.set_notBefore(lastUpdate)
-#         # certificate.set_notAfter(nextUpdate)
-#         # certificate.set_serial_number(serialnr)
-#         # certificate.set_issuer(issuer)
-#         # certificate.set_subject(request.get_subject())
-#         # certificate.set_pubkey(key)
-#         # certificate.sign(self.privatekey, 'sha256')
-
-#         # pkc = crypto.PKCS12()
-#         # pkc.set_ca_certificates([self.root.certificate, self.certificate])
-#         # pkc.set_certificate(certificate)
-#         # pkc.set_privatekey(key)
-
-#         # if self.name == "ica":
-#         #     self.write_cert(os.path.join(self.certs, f"{firstName}") + "_cert.pem", certificate)
-#         #     self.write_key(os.path.join(self.keys, firstName) + "_key.pem", key)
-#         # else:
-#         #     self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
-#         #     self.write_key(os.path.join(self.keys, str(serialnr)) + "_key.pem", key)
-#         # self.write_index(serialnr)
-
-#         # logging.info(f"({self.name}) Create Certificate {serialnr}: SUCCESS ")
-
-#         # return pkc.export(), serialnr
-
-#     def revoke_certificate(self, serialnr) -> bool:
-#         """
-#         Revokes the certificate with the given serial number. Returns a bool indicating wheter the revocation has been successful or not
-#         """
-#         logging.info(f"({self.name}) Attempt to revoke certificate with the following number: {serialnr}")
-#         for file in os.listdir(self.certs):
-#             certificate = self.load_cert(file)
-#             if certificate.get_serial_number() == int(serialnr):
-#                 lastUpdate, nextUpdate = self.get_times()
-#                 revoke = crypto.Revoked()
-#                 revoke.set_serial(str(serialnr).encode())
-#                 revoke.set_rev_date(lastUpdate)
-#                 self.update_crl(revoke, lastUpdate, nextUpdate)                
-#                 self.revoke_index(serialnr)
-#                 logging.info(f"({self.name}) Revoke certificate: SUCCESS")
-#                 return True
-#         logging.info(f"({self.name}) Revoke certificate: SUCCESS")
-#         return False
-
-#     def adminInfo(self):
-#         """
-#         Returns basic admin info as specified in the project description
-#         """
-#         logging.info(f"({self.name}) Admin Info: REQUESTED")
-#         return {
-#             'certificates': len([name for name in os.listdir(self.certs)]) if self.certs else 0,
-#             'revocations': len(self.crl.get_revoked()) if self.crl.get_revoked() else 0,
-#             "serial_nr": self.get_serial_number(0)
-#         }
