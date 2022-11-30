@@ -154,7 +154,7 @@ def createICACert(name: str):
     cert.set_issuer(ica_cert.get_subject())
     cert.set_subject(req.get_subject())
     cert.set_pubkey(req.get_pubkey())
-    dns = ["DNS:*.imovies.ch"]
+    dns = ["DNS:www.imovies.ch", "DNS:imovies.ch", "IP:192.168.99.20"]
     cert.add_extensions([
         crypto.X509Extension(b'extendedKeyUsage', False, b'serverAuth, clientAuth'),
         crypto.X509Extension(b'subjectAltName', False, ", ".join(dns).encode())
