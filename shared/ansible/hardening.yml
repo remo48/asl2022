@@ -16,6 +16,9 @@
       shell: "killall -u vagrant"
       ignore_errors: true
 
+- hosts: all, !web
+  become: yes
+  tasks:
     - name: Remove vagrant user
       user:
         name: vagrant

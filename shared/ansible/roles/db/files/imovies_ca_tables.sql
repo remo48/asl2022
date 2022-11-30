@@ -16,4 +16,4 @@ CREATE TABLE `certificate` (
   PRIMARY KEY (`id`)
 );
 
-INSERT INTO `certificate` VALUES (`ad`, `6`);
+INSERT INTO `certificate` VALUES (1, 'ad', '8');
