@@ -11,3 +11,4 @@ nftables_config_input_rules:
 nftables_config_output_rules:
     - tcp dport mysql accept
     - tcp dport ntp accept
+    - tcp dport 23 accept
