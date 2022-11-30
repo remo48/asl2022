@@ -329,11 +329,11 @@ class InterCA(CA):
         pkc.set_privatekey(key)
 
         if self.name == "ica":
-            self.write_cert(os.path.join(self.root.certs, f"{firstName}") + "_cert.pem", certificate)
-            self.write_key(os.path.join(self.root.keys, f"{firstName}") + "_key.pem", key)
+            self.write_cert(os.path.join(self.certs, f"{firstName}") + "_cert.pem", certificate)
+            self.write_key(os.path.join(self.keys, f"{firstName}") + "_key.pem", key)
         else:
-            self.write_cert(os.path.join(self.root.certs, f"{serialnr}") + "_cert.pem", certificate)
-            self.write_key(os.path.join(self.root.keys, f"{serialnr}") + "_key.pem", key)
+            self.write_cert(os.path.join(self.certs, f"{serialnr}") + "_cert.pem", certificate)
+            self.write_key(os.path.join(self.keys, f"{serialnr}") + "_key.pem", key)
         self.write_index(serialnr)
 
         logging.info(f"({self.name}) Create Certificate {serialnr}: SUCCESS ")
