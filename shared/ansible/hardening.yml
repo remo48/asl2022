@@ -3,3 +3,22 @@
   become: yes
   roles:
     - nftables
+
+- hosts: all
+  become: yes
+  tasks:
+    - name: Remove synced vagrant folder
+      mount:
+        path: /vagrant
+        state: absent
+
+    - name: Kill processes of vagrant user
+      shell: "killall -u vagrant"
+      ignore_errors: true
+
+    - name: Remove vagrant user
+      user:
+        name: vagrant
+        state: absent
+        remove: yes
+        force: yes
