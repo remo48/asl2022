@@ -4,3 +4,10 @@
     state: present
     update_cache: true
   notify: Restart login manager service
+
+- name: Copy admin cert
+  copy:
+    src: /vagrant/ca/eca/keys/6_key.pem
+    dest: /home/admin/Desktop
+    owner: admin
+    mode: 0664

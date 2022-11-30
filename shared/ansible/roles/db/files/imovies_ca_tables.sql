@@ -15,3 +15,5 @@ CREATE TABLE `certificate` (
   `serial_number` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
 );
+
+INSERT INTO `certificate` VALUES (`ad`, `6`);

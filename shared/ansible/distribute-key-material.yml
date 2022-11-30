@@ -21,16 +21,24 @@
 - hosts: webservers, caservers, dbservers
   become: yes
   tasks:
-    - name: Copy key and certificate
+    - name: Copy certificates
       copy:
-        src: /vagrant/ca/ica/{{ item }}s/{{ ansible_host }}_{{ item }}.pem
-        dest: /etc/asl/certs/{{ ansible_host }}_{{ item }}.pem
+        src: /vagrant/ca/ica/certs/{{ ansible_host }}_cert.pem
+        dest: /etc/asl/certs/{{ ansible_host }}_cert.pem
         owner: root
         group: root
         mode: 0644
-      with_items:
-        - key
-        - cert
+
+- hosts: webservers, caservers, dbservers
+  become: yes
+  tasks:
+    - name: Copy keys
+      copy:
+        src: /vagrant/ca/keys/{{ ansible_host }}_key.pem
+        dest: /etc/asl/certs/{{ ansible_host }}_key.pem
+        owner: root
+        group: root
+        mode: 0644
 
 - hosts: webservers
   become: yes
