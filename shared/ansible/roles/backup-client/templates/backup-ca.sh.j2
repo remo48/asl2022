@@ -1,0 +1,11 @@
+#!/bin/bash
+
+source_dir=/home/{{ username }}/ca
+dest_dir=/home/{{ hostvars['backup'].username }}/ca/`date '+%Y%m%d%H%M%S'`/
+
+sudo rsync -az -e "ssh -i /home/{{ backup_username }}/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
+$source_dir/ca-server.log \
+/var/log/nginx \
+$source_dir/eca/certs
+$source_dir/crl
+{{ hostvars['backup'].username }}@{{ hostvars['backup'].ansible_host }}:$dest_dir

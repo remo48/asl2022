@@ -1,0 +1,15 @@
+- name: Copy backup script
+  template: 
+    src: backup-{{ inventory_hostname }}.sh.j2
+    dest: /home/{{ backup_username }}/backup-{{ inventory_hostname }}.sh
+    owner: "{{ backup_username }}"
+    group: "{{ backup_username }}"
+    mode: 0770
+
+- name: schedule backups
+  cron:
+   name: start backup script
+   job: /home/{{ backup_username }}/backup-{{ inventory_hostname }}.sh
+   minute: "0"
+   hour: "0"
+   user: "{{ backup_username }}"

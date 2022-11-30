@@ -4,6 +4,8 @@ web_ip_address: "192.168.99.20"
 
 timezone: Europe/Zurich
 
+backup_username: asl-backup
+
 db_user: admin
 db_pass: 0CL7&nDma60!
 db_name: imovies

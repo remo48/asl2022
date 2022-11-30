@@ -1,0 +1,10 @@
+#!/bin/bash
+
+dest_dir=/home/{{ hostvars['backup'].username }}/db/`date '+%Y%m%d%H%M%S'`/
+
+mysqldump -u{{ db_user }} --databases {{ db_name }} -p'{{ db_pass }}' > /home/{{ backup_username }}/imovies_dump.sql
+
+sudo rsync -az -e "ssh -i /home/{{ backup_username }}/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
+/home/{{ backup_username }}/imovies_dump.sql \
+/var/log/mysql/mysql.log \
+{{ hostvars['backup'].username }}@{{ hostvars['backup'].ansible_host }}:$dest_dir

@@ -6,8 +6,60 @@
         name: rsync
         state: present
 
-- name: setup backup servers
-  hosts: backupservers
+- hosts: backupclients
+  become: yes
+  tasks:
+    - name: Create backup user
+      user: 
+        name: "{{ backup_username }}"
+        password_lock: yes
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        generate_ssh_key: yes
+        ssh_key_type: ed25519
+        ssh_key_file: .ssh/id_ed25519
+
+    - name: Allow backup user to have passwordless sudo
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: "^{{ backup_username }}"
+        line: "{{ backup_username }} ALL=(ALL) NOPASSWD: ALL"
+    
+    - name: Copy public key
+      copy:
+        src: /home/{{ backup_username }}/.ssh/id_ed25519.pub
+        dest: /vagrant/shared/ssh_keys/{{ inventory_hostname }}_backup_id_ed25519.pub
+        remote_src: yes
+
+- hosts: backupservers
+  become: yes
+  tasks:
+    - name: Add backup user to sudoers
+      user:
+        name: "{{ username }}"
+        groups: sudo
+        append: yes
+
+    - name: Ensures backup directories exists
+      file: 
+        path: /home/{{ username }}/{{ item }}
+        state: directory 
+        owner: "{{ username }}" 
+        group: "{{ username }}" 
+        mode: 0750
+      loop: "{{ groups['backupclients'] }}"
+
+    - name: Add backup user to authorized keys
+      authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ lookup('file', '/vagrant/shared/ssh_keys/' + item + '_backup_id_ed25519.pub') }}"
+      loop: "{{ groups['backupclients'] }}"
+
+- name: Setup backup clients
+  hosts: backupclients
   become: yes
   roles:
-    - backup
+    - backup-client
