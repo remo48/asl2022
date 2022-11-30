@@ -308,7 +308,7 @@ class InterCA(CA):
         issuer = self.root.certificate.get_subject()
 
         request = crypto.X509Req()
-        request.get_subject().CN = self.name
+        request.get_subject().CN = firstName
         request.get_subject().O = "iMovies"
         request.set_pubkey(key)
         request.sign(key, 'sha256')
