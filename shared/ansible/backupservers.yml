@@ -1,0 +1,98 @@
+- hosts: dbservers
+  become: yes
+  tasks:
+    - name: Create ssh keys for mysql user
+      user:
+        name: mysql
+        state: present
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        password: "{{ admin_password | password_hash('sha512') }}"
+        generate_ssh_key: yes
+        ssh_key_type: ed25519
+        ssh_key_file: .ssh/id_ed25519
+
+    - name: Copy public key to vagrant share
+      fetch:
+        src: /home/mysql/.ssh/id_ed25519.pub
+        dest: /vagrant/ssh/db/
+        flat: yes
+
+- hosts: caservers
+  become: yes
+  tasks:
+    - name: Create ssh keys for ca user
+      user:
+        name: ca
+        state: present
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        password: "{{ admin_password | password_hash('sha512') }}"
+        generate_ssh_key: yes
+        ssh_key_type: ed25519
+        ssh_key_file: .ssh/id_ed25519
+
+    - name: Copy public key to vagrant share
+      fetch:
+        src: /home/ca/.ssh/id_ed25519.pub
+        dest: /vagrant/ssh/ca/
+        flat: yes
+
+
+- hosts: webservers
+  become: yes
+  tasks:
+    - name: Create ssh keys for web user
+      user:
+        name: web
+        state: present
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        password: "{{ admin_password | password_hash('sha512') }}"
+        generate_ssh_key: yes
+        ssh_key_type: ed25519
+        ssh_key_file: .ssh/id_ed25519
+
+
+    - name: Copy public key to vagrant share
+      fetch:
+        src: /home/web/.ssh/id_ed25519.pub
+        dest: /vagrant/ssh/web/
+        flat: yes
+
+- hosts: backupservers,dbservers,caservers,webservers
+  tasks:
+    - name: install rsync
+      package:
+        name: rsync
+        state: present
+      become: true
+
+- hosts: backupservers
+  become: yes
+  tasks:
+    - name: Add user backup
+      user:
+        name: backup
+        create_home: yes
+        home: /home/backup
+        shell: /bin/bash
+      become: yes
+
+    - name: Add authorized keys
+      authorized_key:
+        user: backup
+        state: present
+        key: "{{ lookup('file', '/vagrant/ssh/{{ item }}/id_ed25519.pub') }}"
+      loop:
+        - db
+        - ca
+        - web
+
+- name: setup backup servers
+  hosts: backup
+  roles:
+    - backup
