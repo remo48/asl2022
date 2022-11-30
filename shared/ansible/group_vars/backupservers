@@ -1,2 +1,5 @@
 ---
 nftables_is_internal_host: true
+
+nftables_config_output_rules:
+    - tcp dport ntp accept
