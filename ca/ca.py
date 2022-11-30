@@ -179,7 +179,7 @@ class CA:
             return certificates
         for number in numbers:
             if not self.is_revoked(number):
-                certificates.append(self.load_cert(number).to_cryptography().public_bytes(Encoding.PEM))
+                certificates.append(self.load_cert(number).to_cryptography().public_bytes(Encoding.PEM).hex())
             else:
                 certificates.append(None)
         return certificates
