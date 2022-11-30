@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.serialization.pkcs12 import (
     load_key_and_certificates,
     serialize_key_and_certificates,
 )
-from cryptography.hazmat.primitives.serialization import NoEncryption
+from cryptography.hazmat.primitives.serialization import NoEncryption, Encoding
 
 
 web = Blueprint(
@@ -36,11 +36,13 @@ def load_user(uid):
 
 @web.route("/")
 def home():
-    return redirect("/profile")
+    return redirect("/login")
 
 @web.route("/login")
 def login():
     logging.info("Page: Login")
+    if current_user.is_authenticated:
+        return redirect("/profile")
     return render_template("login.html")
 
 

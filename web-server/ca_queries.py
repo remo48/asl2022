@@ -22,7 +22,7 @@ def verifyChallenge(challenge, signature, serial):
 
 def getCertificatesBySerialNumbers(serials):
     logging.info("CA: Get Certificates by Serial Numbers, Serials: %s", serials)
-    res = caPost("get_certificates_by_serial_numbers", data={"numbers": serials})
+    res = caPost("get_certificates_by_serial_numbers", data={"numbers": serials or None})
     return res["certificates"]
 
 

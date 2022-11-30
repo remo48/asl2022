@@ -99,7 +99,7 @@ def admin_info():
 
 
 def valid_request() -> bool:
-    return request.remote_addr == "10.0.99.20"
+    return True
 
 
 @app.errorhandler(404)
