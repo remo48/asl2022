@@ -25,6 +25,20 @@
     state: import
     target: /var/tmp/imovies_ca_tables.sql
 
+# - name: Update admin user to required certificate
+#   community.mysql.mysql_query:
+#     login_db: imovies
+#     login_user: admin
+#     login_password: admin
+#     query: alter user admin require subject '/O=imovies/CN=webserver';
+
+# - name: Update admin user to required certificate
+#   community.mysql.mysql_query:
+#     login_db: imovies
+#     login_user: admin
+#     login_password: admin
+#     query: alter user admin require issuer '/O=imovies/CN=root';
+
 - name: Enable TLS connection to mysql
   lineinfile:
     path: /etc/mysql/my.cnf

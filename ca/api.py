@@ -101,7 +101,7 @@ def admin_info():
 
 
 def valid_request() -> bool:
-    return request.remote_addr == "127.0.0.1"
+    return request.remote_addr == "10.0.99.20"
 
 
 @app.errorhandler(404)

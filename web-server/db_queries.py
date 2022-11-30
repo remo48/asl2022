@@ -2,6 +2,7 @@ from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 import logging
 
+
 db = SQLAlchemy()
 
 
@@ -35,13 +36,6 @@ class Certificate(db.Model):
     uid = db.Column(db.String, nullable=False)
 
 
-test_data = {
-    "uid": "ps",
-    "firstname": "Patrick",
-    "lastname": "Schaller",
-    "email": "ps@imovies.ch",
-    "pwd": "6e58f76f5be5ef06a56d4eeb2c4dc58be3dbe8c7",
-}
 
 
 def getUserByUid(uid):
