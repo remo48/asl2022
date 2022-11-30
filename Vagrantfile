@@ -7,7 +7,8 @@ CPU_CAP_PERCENTAGE=50
 INTERNAL_NETWORK="asl-internal"
 PUBLIC_NETWORK="asl-public"
 
-ANSIBLE_REMOTE_PASSWORD="ansible123"
+# password for initial key distribution
+ANSIBLE_REMOTE_PASSWORD="6ac4!gHu3lLw"
 
 # definition of machines 
 # IMPORTANT: if something is changed here, inventory must be 

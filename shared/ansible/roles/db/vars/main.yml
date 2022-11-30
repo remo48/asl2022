@@ -1,5 +1,5 @@
 ---
-mysql_root_password: "sC7*4dr6!QcJ"
+mysql_root_password: "{{ db_root_pass }}"
 mysql_databases:
   - name: "{{ db_name }}"
 mysql_users:
