@@ -16,7 +16,7 @@ backup  ansible_host=backup
 ca      ansible_host=ca
 
 [backupclients]
-config  ansible_connection=local
 ca      ansible_host=ca
 db      ansible_host=db
+web     ansible_host=web
 

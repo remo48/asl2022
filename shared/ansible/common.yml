@@ -40,13 +40,5 @@
     - name: Install Python packages
       pip: 
         name: mysql-connector-python
-        
-- hosts: webservers, caservers
-  become: yes
-  tasks:
-    - name: Add users
-      user:
-        name: "{{ username }}"
-        password_lock: yes
-        shell: "{{ usershell }}"
+
       

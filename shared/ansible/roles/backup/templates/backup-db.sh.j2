@@ -1,0 +1,7 @@
+#!/bin/bash
+dir=/home/{{ username }}/db/`date '+%Y%m%d%H%M%S'`
+mkdir $dir
+mkdir $dir/logs
+rsync -a {{ hostvars['db'].username }}@{{ hostvars['db'].inventory_hostname }}:/var/log/mysql/ $dir/logs
+
+mysqldump -h {{ hostvars['db'].inventory_hostname }} --databases {{ db_name }} > $dir/mysqldump.sql

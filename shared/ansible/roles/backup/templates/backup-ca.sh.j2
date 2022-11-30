@@ -1,0 +1,4 @@
+#!/bin/bash
+dir=/home/{{ username }}/ca/`date '+%Y%m%d%H%M%S'`/certs
+mkdir $dir
+rsync -a {{ hostvars['ca'].username }}@{{ hostvars['ca'].inventory_hostname }}:/home/{{ hostvars['ca'].username }}/ca/certs/ $dir

@@ -1,0 +1,4 @@
+#!/bin/bash
+dir=/home/{{ username }}/web/`date '+%Y%m%d%H%M%S'`/logs
+mkdir $dir
+rsync -a {{ hostvars['web'].username }}@{{ hostvars['web'].inventory_hostname }}:/home/{{ hostvars['web'].username }}/web-server/web-server.log $dir

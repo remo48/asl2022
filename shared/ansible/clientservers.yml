@@ -1,15 +1,5 @@
 ---
 - hosts: clientservers
-  become: true
-  tasks:
-    - name: Create client user
-      user:
-        name: alice
-        state: present
-        shell: /bin/bash
-        password: "{{ client_password | password_hash('sha512') }}"
-
-- hosts: clientservers
   become: yes
   roles:
     - xfce-desktop
@@ -17,7 +7,24 @@
 - hosts: clientservers
   become: yes
   tasks:
+    - name: Create client user
+      user:
+        name: alice
+        state: present
+        shell: /bin/bash
+        password: "{{ client_password | password_hash('sha512') }}"
+  
     - name: Install firefox
       apt:
         name: firefox-esr
         state: present
+
+    - name: Add domain name to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        regexp: ".*[ \t]{{ item }}$"
+        line: "{{ web_ip_address }} {{ item }}"
+        state: present
+      with_items:
+        - imovies.ch
+        - www.imovies.ch

@@ -2,30 +2,34 @@
   import_tasks: mysql-client.yml
 
 - name: copy backup script
-  copy: src=../files/{{ item }} dest=/home/backup/ owner=backup group=backup mode=0770
+  template: 
+    src: "{{ item }}.j2" 
+    dest: /home/{{ username }}/
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0770
   loop:
     - backup-ca.sh
     - backup-db.sh
     - backup-web.sh
-  become: yes
 
 - name: Ensures backup directories exists
-  file: path=/home/backup/{{ item }}/logs state=directory owner=backup group=backup mode=0750
-  loop:
-    - ca
-    - db
-    - web
-  become: yes
+  file: 
+    path: /home/{{ username }}/{{ item }}
+    state: directory 
+    owner: "{{ username }}" 
+    group: "{{ username }}" 
+    mode: 0750
+  loop: "{{ groups['backupclients'] }}"
 
 - name: schedule backups
   cron:
    name: start backup script
-   job: /home/backup/{{ item }}
-   minute: 0
-   hour: 0
-   user: backup
+   job: /home/{{ username }}/{{ item }}
+   minute: "0"
+   hour: "0"
+   user: "{{ username }}"
   loop:
     - backup-ca.sh
     - backup-db.sh
     - backup-web.sh
-  become: yes

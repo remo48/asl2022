@@ -1,4 +1,7 @@
 ---
+username: asl_backup 
+usershell: /sbin/nologin
+
 nftables_is_internal_host: true
 
 nftables_config_output_rules:

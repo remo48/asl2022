@@ -17,7 +17,7 @@
     - name: Copy public key to vagrant share
       copy:
         src: /home/admin/.ssh/id_ed25519.pub
-        dest: /vagrant/client/id_ed25519.pub
+        dest: /vagrant/shared/ssh_keys/client_id_ed25519.pub
         remote_src: yes
 
 - hosts: configservers
@@ -35,4 +35,4 @@
       authorized_key:
         user: admin
         state: present
-        key: "{{ lookup('file', '/vagrant/client/id_ed25519.pub') }}"
+        key: "{{ lookup('file', '/vagrant/shared/ssh_keys/client_id_ed25519.pub') }}"
