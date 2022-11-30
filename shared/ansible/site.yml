@@ -1,5 +1,6 @@
 ---
 - import_playbook: common.yml
+- import_playbook: distribute-key-material.yml
 - import_playbook: create-admin.yml
 
 # - import_playbook: backupservers.yml
