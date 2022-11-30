@@ -7,7 +7,7 @@
 
 - name: Copy admin cert
   copy:
-    src: /vagrant/ca/eca/keys/6_key.pem
-    dest: /home/admin/Desktop
+    src: /vagrant/ca/eca/certs/admin.p12
+    dest: /home/admin/admin.p12
     owner: admin
     mode: 0664
