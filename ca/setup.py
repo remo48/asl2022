@@ -150,3 +150,4 @@ if __name__ == "__main__":
     createICACert("web")
     createICACert("db")
     createICACert("ca")
+    CA().create_certificate("Admin", "CA", "caadmin@imovies.ch", "ad")

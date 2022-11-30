@@ -69,11 +69,11 @@ class CA:
         with open("certs/root_cert.pem", "rt") as root_certificate:
             self.root_certificate = crypto.load_certificate(crypto.FILETYPE_PEM, root_certificate.read())
 
-        with open("eca/certs/eca_cert.pem", "rt") as certificate:
+        with open("certs/eca_cert.pem", "rt") as certificate:
             self.certificate = crypto.load_certificate(crypto.FILETYPE_PEM, certificate.read())
-        with open("eca/keys/eca_key.pem", "rt") as key:
+        with open("keys/eca_key.pem", "rt") as key:
             self.key = crypto.load_privatekey(crypto.FILETYPE_PEM, key.read())
-        with open("eca/crl/eca_crl.pem", "rt") as root_crl:
+        with open("crl/eca_crl.pem", "rt") as root_crl:
             self.crl = crypto.load_crl(crypto.FILETYPE_PEM, root_crl.read())
 
     def save_key(self, serialnr, key):

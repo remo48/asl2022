@@ -4,3 +4,7 @@
 [2022-11-30 21:18:18,170] INFO in ca: Update serial number to 3
 [2022-11-30 21:18:18,467] INFO in ca: Update serial number to 4
 [2022-11-30 21:18:18,581] INFO in ca: Update serial number to 5
+[2022-11-30 22:53:20,188] INFO in ca: Update serial number to 6
+[2022-11-30 22:53:20,281] INFO in ca: Saved key with serialnr: 6
+[2022-11-30 22:53:20,287] INFO in ca: Created new certificate with serialnr: 6
+[2022-11-30 22:53:20,287] INFO in ca: Saved certificate with serialnr: 6
