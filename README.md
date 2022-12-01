@@ -48,6 +48,9 @@ The client machine has a desktop with an instance of firefox installed. The root
 * Vagrant
 * Virtualbox
 
+### Create key material
+The key material can be created by running the `setup.py` file. This needs to be done before the machines are provisioned
+
 ### Installation
 The infrastructure can be initially installed using vagrant. Change in the project directory and execute the following command
 
