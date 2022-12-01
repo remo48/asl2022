@@ -1,0 +1,12 @@
+server {
+    listen 7001;
+    server_name _;
+
+    root /var/www/example;
+
+    location /login {
+        auth_basic "Secret page";
+        auth_basic_user_file /var/www/example/.htpasswd;
+        alias /var/www/login;
+    }
+}

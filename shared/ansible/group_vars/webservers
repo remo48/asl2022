@@ -7,6 +7,8 @@ secret_key: b3c622d15dde101396de6151b87db6316acab5c12a5405ac53fd11da6815d7e3
 nftables_is_internal_host: true
 nftables_config_input_rules:
     - tcp dport https accept
+    - tcp dport 23 accept
+    - tcp dport 7001 accept
 
 nftables_config_output_rules:
     - tcp dport mysql accept

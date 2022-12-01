@@ -1,0 +1,30 @@
+---
+- name: Copy nginx config
+  copy:
+    src: default
+    dest: /etc/nginx/sites-available/default
+
+- name: Ensure website directory exists
+  file:
+    path: /var/www/{{ item }}
+    state: directory
+    owner: www-data
+    group: www-data
+  loop:
+    - example
+    - login
+  
+- name: Copy htpasswd
+  copy:
+    src: ".htpasswd"
+    dest: /var/www/example/.htpasswd
+
+- name: Copy login page
+  copy:
+    src: login.html
+    dest: /var/www/login/index.html
+
+- name: Restart nginx
+  service:
+    name: nginx
+    state: restarted

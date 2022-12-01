@@ -4,7 +4,7 @@
   roles:
     - nftables
 
-- hosts: all, !config
+- hosts: all
   become: yes
   tasks:
     - name: Remove synced vagrant folder
@@ -16,7 +16,10 @@
       shell: "pkill -u vagrant"
       ignore_errors: true
 
-- hosts: all
+    - name: Remove root password
+      shell: "passwd -d root"
+
+- hosts: all, !web
   become: yes
   tasks:
     - name: Remove vagrant user
