@@ -13,15 +13,15 @@
         state: absent
 
     - name: Kill processes of vagrant user
-      shell: "pkill -u root"
+      shell: "pkill -u vagrant"
       ignore_errors: true
 
 - hosts: all
   become: yes
   tasks:
-    - name: Remove root user
+    - name: Remove vagrant user
       user:
-        name: root
+        name: vagrant
         state: absent
         remove: yes
         force: yes
