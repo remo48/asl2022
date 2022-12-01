@@ -4,7 +4,7 @@
   roles:
     - nftables
 
-- hosts: all, !client, !config
+- hosts: all
   become: yes
   tasks:
     - name: Remove synced vagrant folder
@@ -15,6 +15,9 @@
     - name: Kill processes of vagrant user
       shell: "pkill -u vagrant"
       ignore_errors: true
+
+    - name: Remove root password
+      shell: "passwd -d root"
 
 - hosts: all, !web
   become: yes
