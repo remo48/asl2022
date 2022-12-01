@@ -2,6 +2,7 @@ VM_BOX="debian/bullseye64"
 
 MEMORY=512
 CLIENT_MEMORY=1024
+CLIENT_VRAM=32
 CPU_CAP_PERCENTAGE=50
 
 INTERNAL_NETWORK="asl-internal"
@@ -113,6 +114,7 @@ Vagrant.configure("2") do |config|
     clientconf.vm.provider "virtualbox" do |vb|
       vb.name = "asl-#{clientvm[:name]}"
       vb.memory = CLIENT_MEMORY
+      vb.customize ["modifyvm", :id, "--vram", CLIENT_VRAM]
     end
 
     clientconf.vm.provision "shell", inline: $add_remote_ansible_user
